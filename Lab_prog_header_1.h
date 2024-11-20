@@ -31,7 +31,7 @@ char menu_out_case;
 char sel;
 
 void menu();
-void program_menu();
+void menu_choises();
 
 void tabul(int x) {
     for (int i = x; i != 0; i--) printf("   ");
@@ -87,9 +87,9 @@ void outgoing_correspondence() {
         std::locale loc("ru_RU.UTF-8");
         for (int i = 4; i != 0; i--) printf("\n");
         tabul(11); printf("ÈÑÕÎÄßÙÀß ÊÎÐÐÅÑÏÎÍÄÅÍÖÈß\n\n");
-        tabul(11); printf("1)ÑÎÇÄÀÒÜ ÍÎÂÛÉ\n");
-        tabul(11); printf("2)ÎÒÊÐÛÒÜ ÔÀÉË\n");
-        tabul(11); printf("Esc)ÂÛÕÎÄ\n\n");
+        tabul(11); printf("1)   ÑÎÇÄÀÒÜ ÍÎÂÛÉ ÔÀÉË\n");
+        tabul(11); printf("2)   ÎÒÊÐÛÒÜ ÔÀÉË\n");
+        tabul(11); printf("Esc) ÂÛÕÎÄ Â ÂÛÁÎÐ ÒÈÏÀ ÔÀÉËÀ\n\n");
         tabul(11); printf("_____________________________________________\n\n");
         tabul(11); printf("> ");
         menu_out_case = _getch();
@@ -126,8 +126,9 @@ void outgoing_correspondence() {
             printf("\n");
             tabul(11); printf("ÂÂÅÄÈÒÅ ÈÌß ÔÀÉËÀ: "); scanf("%255s", txt_name);
             tabul(11); printf("ÂÛÁÅÐÈÒÅ ÐÅÆÈÌ ÐÀÁÎÒÛ Ñ ÔÀÉËÎÌ: \n");
-            tabul(11); printf("1) ÇÀÏÈÑÜ Â ÔÀÉË\n");
-            tabul(11); printf("2) ÄÎÁÀÂÈÒÜ Â ÔÀÉË\n");
+            tabul(11); printf("1)   ÇÀÏÈÑÜ Â ÔÀÉË\n");
+            tabul(11); printf("2)   ÄÎÁÀÂÈÒÜ Â ÔÀÉË\n");
+            tabul(11); printf("Esc) ÂÛÕÎÄ Â ÂÛÁÎÐ ÔÀÉËÀ\n\n");
             sprintf(full_name, "%s%s%s%s", folder_way, ocfe, txt_name, file_extension);
             tabul(11); printf("> ");
             sel = _getch();
@@ -255,9 +256,9 @@ void organization_addresses() {
         system("cls");
         for (int i = 4; i != 0; i--) printf("\n");
         tabul(10); printf("ÀÄÐÅÑÀ ÎÐÃÀÍÈÇÀÖÈÈ\n\n");
-        tabul(11); printf("1)ÑÎÇÄÀÒÜ ÍÎÂÛÉ\n");
-        tabul(11); printf("2)ÎÒÊÐÛÒÜ ÔÀÉË\n");
-        tabul(11); printf("Esc)ÂÛÕÎÄ\n\n");
+        tabul(11); printf("1)   ÑÎÇÄÀÒÜ ÍÎÂÛÉ ÔÀÉË\n");
+        tabul(11); printf("2)   ÎÒÊÐÛÒÜ ÔÀÉË\n");
+        tabul(11); printf("Esc) ÂÛÕÎÄ Â ÂÛÁÎÐ ÒÈÏÀ ÔÀÉËÀ\n\n");
         tabul(11); printf("_____________________________________________\n\n");
         tabul(11); printf("> ");
         menu_out_case = _getch();
@@ -297,6 +298,7 @@ void organization_addresses() {
             tabul(11); printf("ÂÛÁÅÐÈÒÅ ÐÅÆÈÌ ÐÀÁÎÒÛ Ñ ÔÀÉËÎÌ: \n");
             tabul(11); printf("1) ÇÀÏÈÑÜ Â ÔÀÉË\n");
             tabul(11); printf("2) ÄÎÁÀÂÈÒÜ Â ÔÀÉË\n");
+            tabul(11); printf("Esc)ÂÛÕÎÄ Â ÂÛÁÎÐ ÔÀÉËÀ\n\n");
             sprintf(full_name, "%s%s%s%s", folder_way, oa, txt_name, file_extension);
             tabul(11); printf("> ");
             sel = _getch();
@@ -391,16 +393,17 @@ void organization_addresses() {
         }
     } while (menu_out_case != 27);
 }
-void program_menu() {
+
+void menu_choises() {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
     do {
         system("cls");
         for (int i = 6; i != 0; i--) printf("\n");
-        tabul(11); printf("ÌÅÍÞ\n\n");
-        tabul(11); printf("1) ÈÑÕÎÄßÙÀß ÊÎÐÐÅÑÏÎÍÄÅÍÖÈß\n");
-        tabul(11); printf("2) ÀÄÐÅÑÀ ÎÐÃÀÍÈÇÀÖÈÉ\n");
-        tabul(11); printf("Esc) ÂÛÕÎÄ\n\n");
+        tabul(11); printf("ÌÅÍÞ ÂÛÁÎÐÀ ÒÈÏÀ ÄÀÍÍÛÕ\n\n");
+        tabul(11); printf("1)   ÈÑÕÎÄßÙÀß ÊÎÐÐÅÑÏÎÍÄÅÍÖÈß\n");
+        tabul(11); printf("2)   ÀÄÐÅÑÀ ÎÐÃÀÍÈÇÀÖÈÉ\n");
+        tabul(11); printf("Esc) ÂÛÕÎÄ Â ÌÅÍÞ\n\n");
         tabul(11); printf("_____________________________________________\n\n");
         tabul(11); printf("ÂÛÁÐÀÍÍÛÉ ÏÓÒÜ Ê ÏÀÏÊÅ: %s\n", folder_way);
         tabul(11); printf("> ");
@@ -435,8 +438,8 @@ void program_way() {
         folder_way[len + 1] = '\0';
     }
 
-    struct stat buffer;
-    if (stat(folder_way, &buffer) == 0) {
+    struct stat program_way_buffer;
+    if (stat(folder_way, &program_way_buffer) == 0) {
         tabul(11); printf("ÏÓÒÜ Ê ÏÀÏÊÅ ÂÛÁÐÀÍ. ");
     }
     else {
@@ -453,10 +456,10 @@ void menu() {
         system("cls");
         for (int i = 3; i != 0; i--) printf("\n");
         tabul(11); printf("ÌÅÍÞ\n\n");
-        tabul(11); printf("1)ÍÀ×ÀÒÜ\n");
-        tabul(11); printf("2)ÏÓÒÜ Ê ÏÀÏÊÅ\n");
-        tabul(11); printf("3)ÈÍÑÒÐÓÊÖÈß\n");
-        tabul(11); printf("Esc)ÂÛÕÎÄ\n\n");
+        tabul(11); printf("1)   ÍÀ×ÀÒÜ ÐÀÁÎÒÓ Ñ ÄÀÍÍÛÌÈ\n");
+        tabul(11); printf("2)   ÏÓÒÜ Ê ÏÀÏÊÅ ÕÐÀÍÅÍÈß ÔÀÉËÎÂ\n");
+        tabul(11); printf("3)   ÈÍÑÒÐÓÊÖÈß\n");
+        tabul(11); printf("Esc) ÂÛÕÎÄ ÈÇ ÏÐÎÃÐÀÌÌÛ\n\n");
         tabul(11); printf("_____________________________________________\n\n");
         tabul(11); printf("ÂÛÁÐÀÍÍÛÉ ÏÓÒÜ Ê ÏÀÏÊÅ: %s\n", folder_way);
         tabul(11); printf("> ");
@@ -466,7 +469,7 @@ void menu() {
         case '1':
             if (folder_way[0] != '\0')
             {
-                program_menu();
+                menu_choises();
                 menu();
                 break;
             }
