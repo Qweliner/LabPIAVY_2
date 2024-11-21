@@ -20,16 +20,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Instruction.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="Lab_prog_header_1.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <None Include=".gitignore">
       <Filter>Файлы ресурсов</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Lab_prog_2.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
