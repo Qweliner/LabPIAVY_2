@@ -1,283 +1,242 @@
 #pragma once
-#pragma once
-#define _CRT_SECURE_NO_WARNINGS
-#include <algorithm>
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
+#include <conio.h>
+#include <locale.h>
+#include <Windows.h>
+#include <algorithm>
 #include <sstream>
-#include <windows.h>
 #include <limits>
 
 
-using namespace std;
+#ifdef max
+#undef max
+#endif
 
-// Структура для организации
-struct Organization {
-    string name;
-    string address;
-    string contactPerson;
-};
-
-// Структура для корреспонденции
+// Структуры
 struct Correspondence {
-    string type;
-    string date;
-    string organizationName;
+    std::string type;
+    std::string date;
+    std::string organization;
 };
 
-// Структура для объединенных данных
-struct MergedData {
-    vector<Organization> organizations;
-    vector<Correspondence> correspondences;
+struct Address {
+    std::string organization;
+    std::string address;
+    std::string contactPerson;
 };
 
-void instruction() {
+
+void printInstructions() {
     system("cls");
-    cout << "ИНСТРУКЦИЯ К ПРОГРАММЕ\n\n";
-    cout << "Данная программа предназначена для работы с данными из двух файлов: \"Исходящая корреспонденция\" (IC_data.txt) и \"Адреса организаций\" (AO_data.txt).\n\n";
-
-    cout << "Функциональные возможности:\n";
-    cout << "1. Избирательный вывод на экран: выводит информацию об организации и ее корреспонденции.\n";
-    cout << "2. Полный вывод в файл: создает отчет со всей информацией.\n\n";
-
-    cout << "Использование:\n";
-    cout << "1. Запустите программу.\n";
-    cout << "2. Укажите путь к папке с файлами (путь должен заканчиваться на '\\').\n";
-    cout << "3. Выберите режим работы (1 или 2).\n";
-    cout << "4. Следуйте инструкциям на экране.\n\n";
-
-    cout << "Требования к данным:\n";
-    cout << "* Файлы должны быть в формате TSV.\n";
-    cout << "* Дата в формате ДД.ММ.ГГГГ.\n";
-    cout << "* В ФИО организатора недопустимы цифры.\n\n";
-
-    cout << "Возможные ошибки:\n";
-    cout << "* Неверный путь к папке.\n";
-    cout << "* Файлы не найдены или повреждены.\n";
-    cout << "* Некорректный формат данных.\n\n";
-
-    cout << "Нажмите любую клавишу для продолжения...\n";
-    system("pause");
+    std::cout << "\nИнструкция по работе с программой:\n";
+    std::cout << "1. Путь к папке: Укажите полный путь к папке, содержащей файлы с корреспонденцией и адресами.\n";
+    std::cout << "   Пример: C:\\Users\\YourName\\Documents\\Correspondence\n";
+    std::cout << "2. Название файлов: Введите названия файлов БЕЗ расширения .txt.\n";
+    std::cout << "   Программа автоматически добавит префиксы (IC_ и AO_) и расширение.\n";
+    std::cout << "3. Избирательный вывод: При выборе этого режима введите название организации для поиска.\n";
+    std::cout << "4. Полный вывод: При выборе этого режима данные будут записаны в файл output.txt в указанной папке.\n";
+    std::cout << "5. Ошибки:\n";
+    std::cout << "   - Неверный путь к папке: Программа сообщит об ошибке.\n";
+    std::cout << "   - Неверный формат файлов: Программа пропустит строки с некорректным форматом данных и выведет предупреждение.\n";
+    std::cout << "   - Организация не найдена: Программа сообщит, если не найдет информацию о запрошенной организации.\n";
+    std::cout << "6. Навигация по меню: Используйте клавиши 1, 2, 3, I, S, O или Esc для навигации.\n";
+    std::cout << "   Esc - выход из программы или возврат в предыдущее меню.\n";
+    std::cout << "\nНажмите любую клавишу для продолжения...";
+    _getch();
 }
 
-// Функция запроса пути к папке
-string getFolderPath() {
-    string folderPath;
-    while (true) {
-        system("cls");
-        cout << "Введите путь к папке (заканчивающийся на \\): ";
-        getline(cin, folderPath);
+std::vector<Correspondence> readCorrespondence(const std::string& filename) {
+    std::vector<Correspondence> correspondence;
+    std::ifstream file(filename);
 
-        if (folderPath.empty()) {
-            cout << "Путь не может быть пустым!\n";
-            system("pause");
-            continue;
-        }
+    if (file.is_open()) {
+        std::string line;
+        std::getline(file, line); // Пропустить заголовок
 
-        if (folderPath.back() != '\\') {
-            folderPath += '\\';
-        }
+        while (std::getline(file, line)) {
+            size_t pos1 = line.find('\t');
+            size_t pos2 = line.find('\t', pos1 + 1);
 
-        struct stat buffer;
-        if (stat(folderPath.c_str(), &buffer) != 0) {
-            cout << "Ошибка: Папка не найдена!\n";
-            system("pause");
-            continue;
-        }
-        return folderPath;
-    }
-}
-
-// Функция загрузки данных из файла
-bool loadFile(const string& filePath, MergedData& data) {
-    ifstream file(filePath);
-    if (!file.is_open()) {
-        cerr << "Ошибка открытия файла: " << filePath << endl;
-        return false;
-    }
-
-    string line;
-    getline(file, line); // Пропускаем заголовок
-
-    if (filePath.find("IC_") != string::npos) { // Исходящая корреспонденция
-        while (getline(file, line)) {
-            stringstream ss(line);
-            string type, date, orgName;
-            getline(ss, type, '\t');
-            getline(ss, date, '\t');
-            getline(ss, orgName, '\t');
-            data.correspondences.push_back({ type, date, orgName });
-        }
-    }
-    else if (filePath.find("AO_") != string::npos) { // Адреса организаций
-        while (getline(file, line)) {
-            stringstream ss(line);
-            string name, address, contact;
-            getline(ss, name, '\t');
-            getline(ss, address, '\t');
-            getline(ss, contact, '\t');
-            data.organizations.push_back({ name, address, contact });
-        }
-    }
-    else {
-        cerr << "Неизвестный тип файла: " << filePath << endl;
-        return false;
-    }
-    file.close();
-    return true;
-}
-
-// Функция объединения данных
-void mergeData(const MergedData& icData, const MergedData& aoData, MergedData& mergedData) {
-    mergedData.organizations = aoData.organizations;
-    mergedData.correspondences = icData.correspondences;
-}
-
-// Функция избирательного вывода на экран
-void selectiveOutput(const MergedData& mergedData) {
-    string orgName;
-    cout << "Название организации: ";
-    getline(cin, orgName);
-
-    auto itOrg = find_if(mergedData.organizations.begin(), mergedData.organizations.end(),
-        [&](const Organization& org) { return org.name == orgName; });
-
-    if (itOrg != mergedData.organizations.end()) {
-        cout << "Организация: " << itOrg->name << endl;
-        cout << "Адрес: " << itOrg->address << endl;
-        cout << "ФИО: " << itOrg->contactPerson << endl;
-        cout << "Корреспонденция:\n";
-        for (const auto& corr : mergedData.correspondences) {
-            if (corr.organizationName == orgName) {
-                cout << "  Тип: " << corr.type << endl;
-                cout << "  Дата: " << corr.date << endl;
+            if (pos1 != std::string::npos && pos2 != std::string::npos) {
+                Correspondence entry;
+                entry.type = line.substr(0, pos1);
+                entry.date = line.substr(pos1 + 1, pos2 - pos1 - 1);
+                entry.organization = line.substr(pos2 + 1);
+                correspondence.push_back(entry);
+            }
+            else {
+                std::cerr << "Ошибка формата файла корреспонденции в строке: " << line << std::endl;
             }
         }
+        file.close();
     }
     else {
-        cout << "Организация не найдена!\n";
+        std::cerr << "Не удалось открыть файл корреспонденции: " << filename << std::endl;
     }
-    system("pause");
+    return correspondence;
 }
 
-// Функция полного вывода в файл
-void fullOutputToFile(const MergedData& mergedData, const string& outputFilePath) {
-    ofstream outputFile(outputFilePath);
-    if (!outputFile.is_open()) {
-        cerr << "Ошибка открытия файла: " << outputFilePath << endl;
+std::vector<Address> readAddresses(const std::string& filename) {
+    std::vector<Address> addresses;
+    std::ifstream file(filename);
+
+    if (file.is_open()) {
+        std::string line;
+        std::getline(file, line); // Пропустить заголовок
+
+        while (std::getline(file, line)) {
+            size_t pos1 = line.find('\t');
+            size_t pos2 = line.find('\t', pos1 + 1);
+
+            if (pos1 != std::string::npos && pos2 != std::string::npos) {
+                Address entry;
+                entry.organization = line.substr(0, pos1);
+                entry.address = line.substr(pos1 + 1, pos2 - pos1 - 1);
+                entry.contactPerson = line.substr(pos2 + 1);
+                addresses.push_back(entry);
+            }
+            else {
+                std::cerr << "Ошибка формата файла адресов в строке: " << line << std::endl;
+            }
+        }
+        file.close();
+    }
+    else {
+        std::cerr << "Не удалось открыть файл адресов: " << filename << std::endl;
+    }
+    return addresses;
+}
+
+void printSelectiveInfo(const std::vector<Correspondence>& correspondence, const std::vector<Address>& addresses) {
+    std::string orgName;
+    std::cout << "Введите название организации для поиска: ";
+    std::cin >> orgName;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    for (const auto& corr : correspondence) {
+        if (corr.organization == orgName) {
+            for (const auto& addr : addresses) {
+                if (addr.organization == orgName) {
+                    std::cout << "Тип корреспонденции: " << corr.type << std::endl;
+                    std::cout << "Дата: " << corr.date << std::endl;
+                    std::cout << "Адрес: " << addr.address << std::endl;
+                    std::cout << "Контактное лицо: " << addr.contactPerson << std::endl;
+                    std::cout << "--------------------" << std::endl;
+                    return;
+                }
+            }
+            std::cerr << "Адрес для организации " << orgName << " не найден." << std::endl;
+            return;
+        }
+    }
+    std::cerr << "Корреспонденция для организации " << orgName << " не найдена." << std::endl;
+}
+
+void printAllInfoToFile(const std::vector<Correspondence>& correspondence, const std::vector<Address>& addresses, const std::string& filename) {
+    std::ofstream outfile(filename);
+
+    if (!outfile.is_open()) {
+        std::cerr << "Не удалось открыть файл для записи: " << filename << std::endl;
         return;
     }
 
-    for (const auto& org : mergedData.organizations) {
-        outputFile << "Организация: " << org.name << endl;
-        outputFile << "Адрес: " << org.address << endl;
-        outputFile << "ФИО: " << org.contactPerson << endl;
-        outputFile << "Корреспонденция:\n";
-        for (const auto& corr : mergedData.correspondences) {
-            if (corr.organizationName == org.name) {
-                outputFile << "  Тип: " << corr.type << endl;
-                outputFile << "  Дата: " << corr.date << endl;
+    std::map<std::string, std::vector<Correspondence>> correspondenceByOrganization;
+    for (const auto& corr : correspondence) {
+        correspondenceByOrganization[corr.organization].push_back(corr);
+    }
+
+    for (const auto& addr : addresses) {
+        outfile << "Организация: " << addr.organization << std::endl;
+        outfile << "Адрес: " << addr.address << std::endl;
+        outfile << "Контактное лицо: " << addr.contactPerson << std::endl;
+
+        if (correspondenceByOrganization.count(addr.organization)) {
+            for (const auto& corr : correspondenceByOrganization[addr.organization]) {
+                outfile << "\tТип корреспонденции: " << corr.type << std::endl;
+                outfile << "\tДата: " << corr.date << std::endl;
             }
         }
-        outputFile << endl;
+        else {
+            outfile << "\tКорреспонденция не найдена." << std::endl;
+        }
+        outfile << "--------------------" << std::endl;
     }
-    outputFile.close();
-    cout << "Данные успешно записаны в " << outputFilePath << endl;
-    system("pause");
+
+    outfile.close();
+    std::cout << "Информация успешно записана в файл: " << filename << std::endl;
 }
 
-// Функция отображения меню
-void displayMenu() {
+
+
+
+std::pair<std::string, std::string> getFilenamesFromUser(const std::string& folderPath) {
+    std::string correspondenceFilename, addressesFilename;
+
+    std::cout << "Введите имя файла с исходящей корреспонденцией (без расширения): ";
+    std::cin >> correspondenceFilename;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+
+    std::cout << "Введите имя файла с адресами организаций (без расширения): ";
+    std::cin >> addressesFilename;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+
+    return { folderPath + "IC_" + correspondenceFilename + ".txt", folderPath + "AO_" + addressesFilename + ".txt" };
+
+}
+
+
+
+void runProgram(std::string& folderPath, std::string& correspondenceFilename, std::string& addressesFilename, std::string& outputFilename) {
+
+
+    tie(correspondenceFilename, addressesFilename) = getFilenamesFromUser(folderPath);
+    if (folderPath.back() != '\\' && folderPath.back() != '/') {
+        folderPath += '\\';
+    }
+
+    outputFilename = folderPath + "output.txt";
+    std::vector<Correspondence> correspondence = readCorrespondence(correspondenceFilename);
+    std::vector<Address> addresses = readAddresses(addressesFilename);
+
+    if (correspondence.empty() || addresses.empty()) {
+        std::cerr << "Ошибка чтения данных. Проверьте файлы и повторите попытку.\n";
+        std::cout << "Нажмите любую клавишу для возврата в меню...";
+        _getch();
+
+        return;
+    }
+
+
     char choice;
-    do {
-        system("cls");
-        cout << "\nМЕНЮ\n";
-        cout << "1) Избирательный вывод\n";
-        cout << "2) Полный вывод в файл\n";
-        cout << "3) Инструкция\n";
-        cout << "Esc) Выход\n";
-        cout << "> ";
+    std::cout << "\nВыберите режим вывода:\n";
+    std::cout << "1. Избирательный вывод на экран (I)\n";
+    std::cout << "2. Полный вывод в файл (O)\n";
+    std::cout << "Esc - Вернуться в главное меню\n";
+    std::cout << "Ваш выбор: ";
 
-        choice = cin.get(); 
+    choice = _getch();
 
-        if (choice == 27) break; 
-
-        MergedData mergedData;
-        string folderPath = getFolderPath();
-        if (folderPath.empty()) return;
-
-        MergedData icData, aoData;
-        string icFilePath = folderPath + "IC_data.txt";
-        string aoFilePath = folderPath + "AO_data.txt";
-
-        if (!loadFile(icFilePath, icData) || !loadFile(aoFilePath, aoData)) {
-            cerr << "Ошибка загрузки данных!\n";
-            system("pause");
-            return;
-        }
-        mergeData(icData, aoData, mergedData);
-
-        try {
-            switch (choice) {
-            case '1':
-                selectiveOutput(mergedData);
-                break;
-            case '2': {
-                string outputFileName;
-                cout << "Имя выходного файла (без расширения): ";
-                cin >> outputFileName;
-                cin.ignore(numeric_limits<streamsize>::max(), '\n'); //https://stackoverflow.com/questions/25020129/cin-ignorenumeric-limitsstreamsizemax-n
-                if (outputFileName.empty()) {
-                    cout << "Имя файла не может быть пустым!\n";
-                    system("pause");
-                    break;
-                }
-                string outputFilePath = folderPath + outputFileName + ".txt";
-                fullOutputToFile(mergedData, outputFilePath);
-                break;
-            }
-            case '3':
-                instruction();
-                break;
-            default:
-                cout << "Неверный выбор!\n";
-                system("pause");
-            }
-        }
-        catch (const exception& e) {
-            cerr << "Произошла ошибка: " << e.what() << endl;
-            system("pause");
-        }
-    } while (true);
-}
-
-// Функция запуска программы
-void runProgram() {
-    displayMenu();
-}
-
-// Функция проверки корректности даты
-bool isValidDate(const string& dateStr) {
-    if (dateStr.length() != 10) return false;
-    if (dateStr[2] != '.' || dateStr[5] != '.') return false;
-    for (char c : dateStr) {
-        if (!isdigit(c) && c != '.') return false;
+    switch (choice) {
+    case '1': case 'i': case 'I':
+        printSelectiveInfo(correspondence, addresses);
+        break;
+    case '2': case 'o': case 'O':
+        printAllInfoToFile(correspondence, addresses, outputFilename);
+        break;
+    case 27: // Esc
+        return;
+    default:
+        std::cerr << "Неверный выбор.\n";
     }
-    try {
-        int d = stoi(dateStr.substr(0, 2));
-        int m = stoi(dateStr.substr(3, 2));
-        int y = stoi(dateStr.substr(6, 4));
-        if (m < 1 || m > 12 || d < 1 || d > 31) return false;
-        if (m == 2) {
-            bool leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
-            if (d > (leap ? 29 : 28)) return false;
-        }
-        if ((m == 4 || m == 6 || m == 9 || m == 11) && d == 31) return false;
-        return true;
-    }
-    catch (const invalid_argument& e) {
-        return false;
-    }
+    std::cout << "Нажмите любую клавишу для возврата в меню...";
+    _getch();
+
+
 }
