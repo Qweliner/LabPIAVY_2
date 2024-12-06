@@ -1,9 +1,24 @@
-﻿#include <iostream>
+﻿using namespace std;
+
+#include "Lab_prog_2.h"
+#include <windows.h>
+
+
+int main()
+{
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+    system("mode con cols=120 lines=30");
+
+    menu();
+}
+
+
+/*
+#include <iostream>
 #include <string>
 #include <windows.h>
 #include "Lab_prog_2.h"
-
-using namespace std;
 
 int main() {
     SetConsoleCP(1251);
@@ -68,3 +83,4 @@ int main() {
     }
     return 0;
 }
+*/

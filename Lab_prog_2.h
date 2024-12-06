@@ -11,10 +11,13 @@
 #include <algorithm>
 #include <sstream>
 #include <limits>
+#include <sys/stat.h>
 
 #ifdef max
 #undef max
-#endif
+#endif  
+
+string currentFolderPath = "";
 
 using namespace std;
 
@@ -39,13 +42,26 @@ bool is_leap(int year) {
     return (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
 }
 
-bool isValidDate(const char* dateStr) {
-    if (strlen(dateStr) != 10) {
+bool isValidFio(const string& fio) {
+    // Проверка на наличие цифр в ФИО
+    bool valid_char = true;
+    for (char c : fio) {
+        if (not((c >= 'а' && c <= 'я') || (c >= 'А' && c <= 'Я') ||
+            (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+            c == ' ' || c == '-' || c == '\x2D')) {
+            valid_char = false;
+        }
+    }
+    return valid_char;
+}
+
+bool isValidDate(const string& dateStr) { // Изменено: теперь принимает std::string
+    if (dateStr.length() != 10) {
         return false;
     }
 
     int day, month, year;
-    int count = sscanf_s(dateStr, "%2d.%2d.%4d", &day, &month, &year);
+    int count = sscanf_s(dateStr.c_str(), "%2d.%2d.%4d", &day, &month, &year); // Используем c_str()
 
     if (count != 3) {
         return false;
@@ -94,6 +110,33 @@ void printInstructions() {
     cout << "   Esc - выход из программы или возврат в предыдущее меню.\n";
     cout << "\nНажмите любую клавишу для продолжения...";
     _getch();
+}
+
+void correctData(string& data, const string& fieldName) {
+    char choice;
+    bool new_is_correct = false;
+    string new_data;
+
+    cout << "Некорректное значение поля " << fieldName << ": " << data << endl;
+    cout << "Желаете изменить? (y/n): ";
+    choice = _getch();
+    if (not(choice == 'y' || choice == 'Y' || choice == 'у' || choice == 'У' || choice == 'н' || choice == 'Н')) {
+        return; //Выходим из функции, если обновление не нужно
+    }
+    while (!new_is_correct) {
+        cout << "Введите исправленное значение: ";
+        getline(cin, new_data);
+        if (fieldName == "Дата") {
+            new_is_correct = isValidDate(new_data);
+        }
+        else if (fieldName == "ФИО") {
+            new_is_correct = isValidFio(new_data);
+        }
+        else {
+            new_is_correct = true;
+        }
+    }
+    data = new_data;
 }
 
 vector<Correspondence> readCorrespondence(const string& filename) {
@@ -158,36 +201,45 @@ vector<Address> readAddresses(const string& filename) {
     return addresses;
 }
 
-void printSelectiveInfo(const vector<Correspondence>& correspondence, const vector<Address>& addresses) {
+void printSelectiveInfo(vector<Correspondence> correspondence, vector<Address> addresses, const string& corrFile, const string& addrFile) { // Убрали & из векторов
     string orgName;
     cout << "Введите название организации для поиска: ";
-    cin >> orgName;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    getline(cin, orgName);
 
-    for (const auto& corr : correspondence) {
-        if (corr.organization == orgName) {
-            for (const auto& addr : addresses) {
-                if (addr.organization == orgName) {
-                    cout << "Тип корреспонденции: " << corr.type << endl;
-                    cout << "Дата: " << corr.date << endl;
-                    cout << "Адрес: " << addr.address << endl;
-                    cout << "Контактное лицо: " << addr.contactPerson << endl;
+    bool found = false;
+    for (size_t i = 0; i < correspondence.size(); ++i) {
+        if (correspondence[i].organization == orgName) {
+            found = true;
+            for (size_t j = 0; j < addresses.size(); ++j) {
+                if (addresses[j].organization == orgName) {
+                    bool dateError = !isValidDate(correspondence[i].date);
+                    bool fioError = !isValidFio(addresses[j].contactPerson);
+
+                    if (dateError) {
+                        correctData(correspondence[i].date, "Дата");
+                    }
+                    if (fioError) {
+                        correctData(addresses[j].contactPerson, "ФИО");
+                    }
+                    cout << "\n--------------------" << endl;
+                    cout << "Тип корреспонденции: " << correspondence[i].type << endl;
+                    cout << "Дата: " << correspondence[i].date << endl;
+                    cout << "Адрес: " << addresses[j].address << endl;
+                    cout << "Контактное лицо: " << addresses[j].contactPerson << endl;
                     cout << "--------------------" << endl;
-                    return;
                 }
             }
-            cerr << "Адрес для организации " << orgName << " не найден." << endl;
-            return;
         }
     }
-    cerr << "Корреспонденция для организации " << orgName << " не найдена." << endl;
+    if (!found) {
+        cerr << "Корреспонденция для организации " << orgName << " не найдена." << endl;
+    }
 }
 
 void printAllInfoToFile(const vector<Correspondence>& correspondence, const vector<Address>& addresses, const string& filename) {
     ofstream outfile(filename);
-
     if (!outfile.is_open()) {
-        cerr << "Не удалось открыть файл для записи: " << filename << endl;
+        cerr << "Ошибка: Не удалось открыть файл для записи: " << filename << endl;
         return;
     }
 
@@ -197,14 +249,22 @@ void printAllInfoToFile(const vector<Correspondence>& correspondence, const vect
     }
 
     for (const auto& addr : addresses) {
+        string fioCopy = addr.contactPerson;
+        if (!isValidFio(fioCopy)) {
+            correctData(fioCopy, "ФИО");
+        }
         outfile << "Организация: " << addr.organization << endl;
         outfile << "Адрес: " << addr.address << endl;
-        outfile << "Контактное лицо: " << addr.contactPerson << endl;
+        outfile << "Контактное лицо: " << fioCopy << endl;
 
         if (correspondenceByOrganization.count(addr.organization)) {
             for (const auto& corr : correspondenceByOrganization[addr.organization]) {
+                string dateCopy = corr.date;
+                if (!isValidDate(dateCopy)) {
+                    correctData(dateCopy, "Дата");
+                }
                 outfile << "\tТип корреспонденции: " << corr.type << endl;
-                outfile << "\tДата: " << corr.date << endl;
+                outfile << "\tДата: " << dateCopy << endl;
             }
         }
         else {
@@ -212,11 +272,9 @@ void printAllInfoToFile(const vector<Correspondence>& correspondence, const vect
         }
         outfile << "--------------------" << endl;
     }
-
     outfile.close();
     cout << "Информация успешно записана в файл: " << filename << endl;
 }
-
 
 pair<string, string> getFilenamesFromUser(const string& folderPath) {
     string correspondenceFilename, addressesFilename;
@@ -227,7 +285,7 @@ pair<string, string> getFilenamesFromUser(const string& folderPath) {
     if (!isValidFileName(correspondenceFilename)) {
         tabul(11); printf("Недопустимые символы в имени файла. Пожалуйста, используйте другое имя.\n");
         printf("ДЛЯ ПРОДОЛЖЕНИЯ НАЖМИТЕ ENTER."); system("PAUSE>nul");
-        //break;
+
     }
 
     cout << "Введите имя файла с адресами организаций (без расширения): ";
@@ -236,35 +294,44 @@ pair<string, string> getFilenamesFromUser(const string& folderPath) {
     if (!isValidFileName(addressesFilename)) {
         tabul(11); printf("Недопустимые символы в имени файла. Пожалуйста, используйте другое имя.\n");
         printf("ДЛЯ ПРОДОЛЖЕНИЯ НАЖМИТЕ ENTER."); system("PAUSE>nul");
-        //break;
+
     }
 
     return { folderPath + "IC_" + correspondenceFilename + ".txt", folderPath + "AO_" + addressesFilename + ".txt" };
 
 }
 
-
-
 void runProgram(string& folderPath, string& correspondenceFilename, string& addressesFilename, string& outputFilename) {
+    pair<string, string> filenames = getFilenamesFromUser(folderPath);
+    correspondenceFilename = filenames.first;
+    addressesFilename = filenames.second;
 
-
-    tie(correspondenceFilename, addressesFilename) = getFilenamesFromUser(folderPath);
     if (folderPath.back() != '\\' && folderPath.back() != '/') {
         folderPath += '\\';
     }
 
     outputFilename = folderPath + "output.txt";
-    vector<Correspondence> correspondence = readCorrespondence(correspondenceFilename);
-    vector<Address> addresses = readAddresses(addressesFilename);
 
-    if (correspondence.empty() || addresses.empty()) {
-        cerr << "Ошибка чтения данных. Проверьте файлы и повторите попытку.\n";
+    vector<Correspondence> correspondence;
+    vector<Address> addresses;
+
+    try {
+        correspondence = readCorrespondence(correspondenceFilename);
+        addresses = readAddresses(addressesFilename);
+    }
+    catch (const std::runtime_error& error) {
+        cerr << "Ошибка при чтении файлов: " << error.what() << endl;
         cout << "Нажмите любую клавишу для возврата в меню...";
         _getch();
-
         return;
     }
 
+    if (correspondence.empty() || addresses.empty()) {
+        cerr << "Ошибка: Файлы корреспонденции или адресов пусты." << endl;
+        cout << "Нажмите любую клавишу для возврата в меню...";
+        _getch();
+        return;
+    }
 
     char choice;
     cout << "\nВыберите режим вывода:\n";
@@ -277,18 +344,88 @@ void runProgram(string& folderPath, string& correspondenceFilename, string& addr
 
     switch (choice) {
     case '1': case 'i': case 'I':
-        printSelectiveInfo(correspondence, addresses);
+        printSelectiveInfo(correspondence, addresses, correspondenceFilename, addressesFilename);
         break;
     case '2': case 'o': case 'O':
         printAllInfoToFile(correspondence, addresses, outputFilename);
         break;
-    case 27: // Esc
+    case 27:
         return;
     default:
         cerr << "Неверный выбор.\n";
     }
     cout << "Нажмите любую клавишу для возврата в меню...";
     _getch();
+}
 
+void menu() {
+    bool folderPathSet = false;
+    string correspondenceFilename, addressesFilename, outputFilename;
+    string currentFolderPath = "";
 
+    while (true) {
+        system("cls");
+        cout << "Главное меню:\n";
+        cout << "1. Начать работу (S) ";
+        if (!folderPathSet) {
+            cout << "(сначала укажите путь к папке)\n";
+        }
+        else {
+            cout << '\n';
+        }
+        cout << "2. Путь к папке (F)\n";
+        cout << "3. Инструкция (I)\n\n";
+        cout << "Текущий путь: " << currentFolderPath << "\n\n";
+        cout << "Esc - Выход\n\n";
+        cout << "> ";
+
+        char mainChoice = _getch();
+
+        switch (mainChoice) {
+        case '1': case 's': case 'S':
+            if (!folderPathSet) {
+                cerr << "Ошибка: сначала укажите путь к папке.\n";
+                _getch();
+            }
+            else {
+                runProgram(currentFolderPath, correspondenceFilename, addressesFilename, outputFilename);
+            }
+            break;
+        case '2': case 'f': case 'F': {
+            cout << "Введите путь к папке: ";
+            getline(cin, currentFolderPath);
+
+            // Проверка пути с использованием stat
+            struct stat buffer;
+            if (stat(currentFolderPath.c_str(), &buffer) != 0) {
+                if (errno == ENOENT) {
+                    cerr << "Ошибка: указанный путь не существует.\n";
+                }
+                else {
+                    cerr << "Ошибка: не удалось проверить путь к папке. Код ошибки: " << errno << "\n";
+                }
+                _getch();
+                continue; // Возврат в начало цикла, если путь некорректен
+            }
+
+            // Добавляем '\' в конце пути, если его там нет
+            if (currentFolderPath.back() != '\\') {
+                currentFolderPath += '\\';
+            }
+
+            folderPathSet = true;
+            cout << "\nТекущий путь к папке: " << currentFolderPath << endl;
+            cout << "Нажмите любую клавишу для продолжения...";
+            _getch();
+            break;
+        }
+        case '3': case 'i': case 'I':
+            printInstructions();
+            break;
+        case 27:
+            return;
+        default:
+            cerr << "Неверный выбор.\n";
+        }
+    }
 }
