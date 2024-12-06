@@ -3,10 +3,7 @@
 #include <windows.h>
 #include "Lab_prog_2.h"
 
-//TO DO
-//
-// надо будет сделать юзерфрендли, проверку дат и фамилий из предыдущей программы
-//
+using namespace std;
 
 int main() {
     SetConsoleCP(1251);
@@ -14,63 +11,59 @@ int main() {
     system("mode con cols=120 lines=30");
     setlocale(LC_ALL, "Russian");
 
-    std::string folderPath, correspondenceFilename, addressesFilename, outputFilename;
-    bool folderPathSet = false; // Флаг, указывающий, установлен ли путь к папке
-
+    string folderPath, correspondenceFilename, addressesFilename, outputFilename;
+    bool folderPathSet = false;
 
     while (true) {
         system("cls");
-        std::cout << "Главное меню:\n";
-        std::cout << "1. Начать работу (S) ";
+        cout << "Главное меню:\n";
+        cout << "1. Начать работу (S) ";
         if (!folderPathSet) {
-            std::cout << "(сначала укажите путь к папке)\n"; // Подсказка
+            cout << "(сначала укажите путь к папке)\n";
         }
         else {
-            std::cout << '\n';
+            cout << '\n';
         }
 
-        std::cout << "2. Путь к папке (F)\n";
-        std::cout << "3. Инструкция (I)\n";
-        std::cout << "Esc - Выход\n";
-        std::cout << "Ваш выбор: ";
+        cout << "2. Путь к папке (F)\n";
+        cout << "3. Инструкция (I)\n";
+        cout << "Esc - Выход\n";
+        cout << "> ";
 
         char mainChoice = _getch();
 
         switch (mainChoice) {
         case '1': case 's': case 'S':
             if (!folderPathSet) {
-                std::cerr << "Ошибка: сначала укажите путь к папке.\n";
-                std::cout << "Нажмите любую клавишу для продолжения...";
+                cerr << "Ошибка: сначала укажите путь к папке.\n";
+                cout << "Нажмите любую клавишу для продолжения...";
                 _getch();
-
             }
             else {
                 runProgram(folderPath, correspondenceFilename, addressesFilename, outputFilename);
             }
-
             break;
         case '2': case 'f': case 'F':
-            std::cout << "Введите путь к папке: ";
-            std::cin >> folderPath;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Очистка буфера
+            cout << "Введите путь к папке: ";
+            cin >> folderPath;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-            // Проверка и добавление обратной косой черты
             if (folderPath.back() != '\\' && folderPath.back() != '/') {
                 folderPath += '\\';
             }
 
-            folderPathSet = true; // Путь установлен
-            std::cout << "\nТекущий путь к папке: " << folderPath << std::endl; // Вывод текущего пути
-            std::cout << "Нажмите любую клавишу для продолжения...";
+            folderPathSet = true;
+            cout << "\nТекущий путь к папке: " << folderPath << endl;
+            cout << "Нажмите любую клавишу для продолжения...";
             _getch();
             break;
         case '3': case 'i': case 'I':
             printInstructions();
             break;
-        case 27: // Esc
+        case 27:
             return 0;
         default:
-            std::cerr << "Неверный выбор.\n";
+            cerr << "Неверный выбор.\n";
         }
     }
     return 0;
