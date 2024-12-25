@@ -16,7 +16,7 @@
 
 #ifdef max
 #undef max
-#endif  
+#endif
 
 string currentFolderPath = "";
 
@@ -56,13 +56,13 @@ bool isValidFio(const string& fio) {
     return valid_char;
 }
 
-bool isValidDate(const string& dateStr) { // Изменено: теперь принимает std::string
+bool isValidDate(const string& dateStr) {
     if (dateStr.length() != 10) {
         return false;
     }
 
     int day, month, year;
-    int count = sscanf_s(dateStr.c_str(), "%2d.%2d.%4d", &day, &month, &year); // Используем c_str()
+    int count = sscanf_s(dateStr.c_str(), "%2d.%2d.%4d", &day, &month, &year);
 
     if (count != 3) {
         return false;
@@ -110,43 +110,17 @@ void readInstructionsFromFile(const std::string& filename) {
     _getch();
 }
 
-void correctData(string& data, const string& fieldName) {
-    char choice;
-    bool new_is_correct = false;
-    string new_data;
-
-    cout << "Некорректное значение поля " << fieldName << ": " << data << endl;
-    cout << "Желаете изменить? (y/n): ";
-    choice = _getch();
-    if (not(choice == 'y' || choice == 'Y' || choice == 'у' || choice == 'У' || choice == 'н' || choice == 'Н')) {
-        return; //Выходим из функции, если обновление не нужно
-    }
-    while (!new_is_correct) {
-        cout << "Введите исправленное значение: ";
-        getline(cin, new_data);
-        if (fieldName == "Дата") {
-            new_is_correct = isValidDate(new_data);
-        }
-        else if (fieldName == "ФИО") {
-            new_is_correct = isValidFio(new_data);
-        }
-        else {
-            new_is_correct = true;
-        }
-    }
-    data = new_data;
-}
-
-// Функция для поиска и вывода информации по организации
 void processOrganization(const string& orgName, const string& corrFilename, const string& addrFilename, bool selectiveOutput, ofstream* outfile = nullptr, set<string>& printedOrganizations = *(new set<string>())) {
     ifstream corrFile(corrFilename);
     ifstream addrFile(addrFilename);
     vector<pair<string, string>> addresses;
     bool orgFoundInAddress = false;
+    int lineNumber = 1;
 
     if (addrFile.is_open()) {
         string line;
         getline(addrFile, line); // Пропустить заголовок
+        lineNumber++;
 
         while (getline(addrFile, line)) {
             size_t pos1 = line.find('\t');
@@ -155,13 +129,19 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
             if (pos1 != string::npos && pos2 != string::npos) {
                 string currentOrg = line.substr(0, pos1);
                 if (currentOrg == orgName) {
+
                     addresses.push_back({ line.substr(pos1 + 1, pos2 - pos1 - 1), line.substr(pos2 + 1) });
                     orgFoundInAddress = true;
+                    string fio = line.substr(pos2 + 1);
+                    if (!isValidFio(fio)) {
+                        cout << "Ошибка в файле: " << addrFilename << ", строка: " << lineNumber << ", некорректное значение поля ФИО: " << fio << endl;
+                    }
                 }
             }
             if (!selectiveOutput && outfile && printedOrganizations.find(orgName) != printedOrganizations.end()) {
                 break;
             }
+            lineNumber++;
         }
         addrFile.close();
     }
@@ -175,7 +155,6 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
             cerr << "Организация " << orgName << " не найдена в файле адресов." << endl;
         return;
     }
-
 
     if (selectiveOutput) {
         cout << "Организация: " << orgName << endl;
@@ -219,6 +198,8 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
             if (corrFile.is_open()) {
                 string line;
                 getline(corrFile, line); // Пропустить заголовок
+                lineNumber = 1;
+                lineNumber++;
                 bool foundCorrespondence = false;
                 while (getline(corrFile, line)) {
                     size_t pos1 = line.find('\t');
@@ -233,8 +214,9 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
                             bool dateError = !isValidDate(date);
 
                             if (dateError) {
-                                correctData(date, "Дата");
+                                cout << "Ошибка в файле: " << corrFilename << ", строка: " << lineNumber << ", некорректное значение поля Дата: " << date << endl;
                             }
+
                             if (selectiveOutput) {
                                 cout << "\tТип корреспонденции: " << type << endl;
                                 cout << "\tДата: " << date << endl;
@@ -245,6 +227,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
                             }
                         }
                     }
+                    lineNumber++;
                 }
                 if (!foundCorrespondence && selectiveOutput) {
                     cerr << "Корреспонденция для организации " << orgName << " не найдена." << endl;
@@ -308,6 +291,7 @@ void runProgram(string& folderPath, string& correspondenceFilename, string& addr
     cout << "Ваш выбор: ";
 
     choice = _getch();
+    cout << endl;
 
     switch (choice) {
     case '1': case 'i': case 'I': {
@@ -340,7 +324,7 @@ void runProgram(string& folderPath, string& correspondenceFilename, string& addr
             addrFile.close();
         }
         outfile.close();
-        cout << "Информация успешно записана в файл: " << outputFilename << endl;
+        cout << "\nИнформация успешно записана в файл: " << outputFilename << endl;
         break;
     }
     case 27:
