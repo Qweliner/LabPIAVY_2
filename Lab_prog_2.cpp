@@ -1,3 +1,4 @@
+//Lab_prog_2.cpp
 #include "Lab_prog_2.h"
 #include <algorithm>
 #include <fstream> //  Добавлен для работы с файлами
@@ -66,6 +67,7 @@ bool isValidFileName(const string& fileName) {
 
 /** @brief Читает инструкции из файла. */
 void readInstructionsFromFile(const string& filename) {
+    system("mode con cols=150 lines=36"); // Размер экрана инструкции
     ifstream file(filename);
     if (file.is_open()) {
         string line;
@@ -77,6 +79,7 @@ void readInstructionsFromFile(const string& filename) {
         cerr << "Не удалось открыть файл инструкции: " << filename << endl;
     cout << "\nНажмите любую клавишу для продолжения...";
     _getch();
+    system("mode con cols=120 lines=30");
 }
 
 /** @brief Обрабатывает информацию об организации.
@@ -388,6 +391,10 @@ void menu() {
                 else
                     cerr << "Ошибка: не удалось проверить путь к папке. Код ошибки: "
                     << errno << "\n";
+
+                // Очистка currentFolderPath при ошибке
+                currentFolderPath = "";
+                folderPathSet = false; // Сброс флага
                 _getch();
                 continue; // Возврат в начало цикла, если путь некорректен
             }

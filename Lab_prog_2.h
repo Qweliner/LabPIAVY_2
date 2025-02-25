@@ -1,3 +1,5 @@
+//Lab_prog_2.h
+
 #pragma once
 
 #include <algorithm>
