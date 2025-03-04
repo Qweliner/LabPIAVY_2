@@ -1,62 +1,54 @@
-//Lab_prog_2.cpp
 #include "Lab_prog_2.h"
 #include <algorithm>
-#include <fstream> //  Добавлен для работы с файлами
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <sstream>
-#include <vector> // Добавляем vector для хранения вывода
+#include <vector>
+#include <iomanip>
+#include <filesystem>
+#include <conio.h>
 
 using namespace std;
 
-// Инициализация глобальной переменной
+// ОПРЕДЕЛЕНИЕ глобальной переменной
 string currentFolderPath = "";
 
-/** @brief Выводит табуляцию. */
-void tabul(int x) {
-    for (int i = x; i != 0; i--)
-        printf("   "); // Вывод трех пробелов
+/** @brief Выполняет чтение строки из консоли с поддержкой Esc и Backspace.
+ *  @param instruction Сообщение, отображаемое пользователю перед вводом.
+ *  @return Введенная строка, или пустая строка, если был нажат Esc.
+ */
+string getLineWithEsc(const string& instruction) {
+    string input;
+    cout << instruction;
+    while (true) {
+        int key = _getch();
+        if (key == 27) { // ESC
+            cin.clear();
+            input = ""; // Очистка строки ввода
+            cout << endl;
+            return input;
+        }
+        else if (key == '\r') { // Enter
+            cout << endl;
+            return input;
+        }
+        else if (key == 8) { // Backspace
+            if (!input.empty()) {
+                input.pop_back();
+                cout << "\b \b";
+            }
+        }
+        else if (key >= 32 && key <= 126) { // Printable characters
+            input += (char)key;
+            cout << (char)key;
+        }
+    }
 }
 
 /** @brief Определяет, является ли год високосным. */
 bool is_leap(int year) {
     return (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
-}
-
-/** @brief Проверяет допустимость ФИО. */
-bool isValidFio(const string& fioStr) {
-    bool valid_char = true;
-    for (char c : fioStr) {
-        if (not((c >= 'а' && c <= 'я') || (c >= 'А' && c <= 'Я') ||
-            (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ' ||
-            c == '-' || c == '\x2D'))
-            valid_char = false;
-    }
-    return valid_char;
-}
-
-/** @brief Проверяет допустимость формата даты. */
-bool isValidDate(const string& dateStr) {
-    if (dateStr.length() != 10)
-        return false;
-    int day = 0, month = 0, year = 0;
-    int count = sscanf_s(dateStr.c_str(), "%2d.%2d.%4d", &day, &month, &year);
-    if (count != 3)
-        return false;
-    if (month < 1 || month > 12)
-        return false;
-    if (day < 1 || day > 31)
-        return false;
-    if (month == 2) {
-        int daysInFeb = 28 + (is_leap(year) ? 1 : 0);
-        if (day > daysInFeb)
-            return false;
-    }
-    else if (month == 4 || month == 6 || month == 9 || month == 11) {
-        if (day > 30)
-            return false;
-    }
-    return true;
 }
 
 /** @brief Проверяет допустимость имени файла. */
@@ -67,7 +59,7 @@ bool isValidFileName(const string& fileName) {
 
 /** @brief Читает инструкции из файла. */
 void readInstructionsFromFile(const string& filename) {
-    system("mode con cols=150 lines=36"); // Размер экрана инструкции
+    system("mode con cols=150 lines=36");
     ifstream file(filename);
     if (file.is_open()) {
         string line;
@@ -75,9 +67,11 @@ void readInstructionsFromFile(const string& filename) {
             cout << line << endl;
         file.close();
     }
-    else
+    else {
         cerr << "Не удалось открыть файл инструкции: " << filename << endl;
-    cout << "\nНажмите любую клавишу для продолжения...";
+        cerr << "Пожалуйста, поместите файл instructions.txt в ту же папку, где находится исполняемый файл программы.\n";
+    }
+    cout << "\nНажмите любую клавишу для продолжения...\n";
     _getch();
     system("mode con cols=120 lines=30");
 }
@@ -85,7 +79,7 @@ void readInstructionsFromFile(const string& filename) {
 /** @brief Обрабатывает информацию об организации.
  *  Находит и выводит данные организации из файлов корреспонденции и адресов.
  */
-void processOrganization(const string& orgName, const string& corrFilename, const string& addrFilename, bool selectiveOutput, ofstream* outfile,set<string>& printedOrganizations, vector<string>& outputBuffer) {
+void processOrganization(const string& orgName, const string& corrFilename, const string& addrFilename, bool selectiveOutput, ofstream* outfile, set<string>& printedOrganizations, vector<string>& outputBuffer) {
     ifstream corrFile(corrFilename);
     ifstream addrFile(addrFilename);
     vector<pair<string, string>> addresses;
@@ -93,7 +87,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
     int lineNumber = 1;
 
     auto writeToBuffer = [&](const string& str) {
-        outputBuffer.push_back(str); // Записываем строку в буфер
+        outputBuffer.push_back(str);
         };
 
     if (addrFile.is_open()) {
@@ -111,16 +105,8 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
                     addresses.push_back({ line.substr(pos1 + 1, pos2 - pos1 - 1),
                                          line.substr(pos2 + 1) });
                     orgFoundInAddress = true;
-                    string contactFio = line.substr(pos2 + 1);
-                    if (!isValidFio(contactFio)) {
-                        writeToBuffer("Ошибка в файле: " + addrFilename + ", строка: " + to_string(lineNumber) +
-                            ", некорректное значение поля ФИО: " + contactFio);
-                    }
                 }
             }
-            if (!selectiveOutput && outfile &&
-                printedOrganizations.find(orgName) != printedOrganizations.end())
-                break; // Прерываем, если не селективный и уже напечатан
             lineNumber++;
         }
         addrFile.close();
@@ -165,7 +151,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
                     }
                     else {
                         if (i == 1)
-                            *outfile << "\nДругие найденные данные компании:\n";
+                            *outfile << "\nДругие найденные данные компании:\n" << endl;
                         *outfile << "\nАдрес: " << addresses[i].first << endl;
                         *outfile << "Контактное лицо: " << addresses[i].second << endl;
                     }
@@ -194,11 +180,6 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
                             foundCorrespondence = true;
                             string type = line.substr(0, pos1);
                             string date = line.substr(pos1 + 1, pos2 - pos1 - 1);
-                            bool dateError = !isValidDate(date);
-
-                            if (dateError)
-                                writeToBuffer("Ошибка в файле: " + corrFilename + ", строка: " + to_string(lineNumber)
-                                    + ", некорректное значение поля Дата: " + date);
 
                             if (selectiveOutput) {
                                 writeToBuffer("\tТип корреспонденции: " + type);
@@ -230,26 +211,26 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
 pair<string, string> getFilenamesFromUser(const string& folderPath) {
     string correspondenceFilename, addressesFilename;
 
-    cout << "Введите имя файла с исходящей корреспонденцией (без расширения): ";
-    cin >> correspondenceFilename;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    if (!isValidFileName(correspondenceFilename)) {
-        tabul(11);
-        printf("Недопустимые символы в имени файла. Пожалуйста, используйте другое "
-            "имя.\n");
-        printf("ДЛЯ ПРОДОЛЖЕНИЯ НАЖМИТЕ ENTER.");
+    correspondenceFilename = getLineWithEsc("Введите имя файла с исходящей корреспонденцией (без расширения) или нажмите Esc для отмены: ");
+
+    if (correspondenceFilename.empty() || !isValidFileName(correspondenceFilename)) {
+        cout << "Некорректное имя файла с корреспонденцией.\n";
+        cout << "Для продолжения нажмите Enter.";
         system("PAUSE>nul");
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        return { "", "" };
     }
 
-    cout << "Введите имя файла с адресами организаций (без расширения): ";
-    cin >> addressesFilename;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    if (!isValidFileName(addressesFilename)) {
-        tabul(11);
-        printf("Недопустимые символы в имени файла. Пожалуйста, используйте другое "
-            "имя.\n");
-        printf("ДЛЯ ПРОДОЛЖЕНИЯ НАЖМИТЕ ENTER.");
+    addressesFilename = getLineWithEsc("Введите имя файла с адресами организаций (без расширения) или нажмите Esc для отмены: ");
+
+    if (addressesFilename.empty() || !isValidFileName(addressesFilename)) {
+        cout << "Некорректное имя файла с адресами.\n";
+        cout << "Для продолжения нажмите Enter.";
         system("PAUSE>nul");
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        return { "", "" };
     }
 
     return { folderPath + "IC_" + correspondenceFilename + ".txt",
@@ -257,154 +238,138 @@ pair<string, string> getFilenamesFromUser(const string& folderPath) {
 }
 
 /** @brief Запускает основной процесс программы. */
-void runProgram(string& folderPath, string& correspondenceFilename,
-    string& addressesFilename, string& outputFilename) {
-    pair<string, string> filenames = getFilenamesFromUser(folderPath);
-    correspondenceFilename = filenames.first;
-    addressesFilename = filenames.second;
+void runProgram(const string& folderPath, const string& correspondenceFilename,
+    const string& addressesFilename, string& outputFilename) {
 
-    if (folderPath.back() != '\\' && folderPath.back() != '/')
-        folderPath += '\\';
+    string orgName;
 
-    outputFilename = folderPath + "output.txt";
-
-    char choice;
     cout << "\nВыберите режим вывода:\n";
     cout << "1. Избирательный вывод на экран\n";
     cout << "2. Полный вывод в файл\n";
-    cout << "Esc - Вернуться в главное меню\n";
+    cout << "Esc - вернуться в главное меню\n";
     cout << "\nВаш выбор: ";
 
-    choice = _getch();
+    char choice = _getch();
     cout << endl;
 
     switch (choice) {
     case '1': {
-        string orgName;
-        cout << "Введите название организации для поиска: ";
-        getline(cin, orgName);
+        orgName = getLineWithEsc("Введите название организации для поиска или нажмите Esc для отмены: ");
+
+        if (orgName.empty()) {
+            break;
+        }
+
         ofstream* outfile = nullptr;
         set<string> printedOrganizations;
-        vector<string> outputBuffer; // Создаем буфер для хранения данных
+        vector<string> outputBuffer;
         processOrganization(orgName, correspondenceFilename, addressesFilename,
             true, outfile, printedOrganizations, outputBuffer);
 
-        if (outputBuffer.size() > 28) { // Если строк больше, чем 28
-            string currentFolderPathselectiveoutput = folderPath + "selective_output.txt";
-                ofstream selectiveOutfile(currentFolderPathselectiveoutput);
-            if (selectiveOutfile.is_open()) { // Проверяем, что файл открыт
-                for (const string& line : outputBuffer)
-                    selectiveOutfile << line << endl;
-                selectiveOutfile.close();
-                cout << "\nРезультат сохранен в файле selective_output.txt, так как превысил 28 строк.\n";
-                cout << "Путь к результату: " << currentFolderPathselectiveoutput << "\n";
-            }
-            else
-                cerr << "Ошибка: не удалось открыть файл для записи избирательного вывода.\n";
-        }
-        else { // Иначе, если строк не больше 28, то выводим в консоль
-            for (const string& line : outputBuffer)
-                cout << line << endl;
-        }
+        // Вывод в консоль
+        for (const string& line : outputBuffer)
+            cout << line << endl;
+
+        cout << "Нажмите любую клавишу для возврата в главное меню...\n"; // Добавлено
+        _getch();                                                        // Добавлено
+        system("cls");                                                    // Добавлено
         break;
     }
     case '2': {
-        ofstream outfile(outputFilename);
+        ofstream outfile(folderPath + "output.txt");
         if (!outfile.is_open()) {
-            cerr << "Ошибка: Не удалось открыть файл для записи: " << outputFilename
-                << endl;
-            return;
+            cerr << "Ошибка: не удалось открыть файл для записи.\n";
+            break;
         }
         set<string> printedOrganizations;
-        vector<string> outputBuffer; // Этот буфер больше не нужен
+        vector<string> outputBuffer;
         ifstream addrFile(addressesFilename);
+
         if (addrFile.is_open()) {
             string line;
-            getline(addrFile, line); // Пропустить заголовок
+            getline(addrFile, line);
             while (getline(addrFile, line)) {
-                size_t pos1 = line.find('\t');
-                if (pos1 != string::npos) {
-                    string orgName = line.substr(0, pos1);
-                    if (printedOrganizations.find(orgName) == printedOrganizations.end())
-                        processOrganization(orgName, correspondenceFilename,
-                            addressesFilename, false, &outfile,
-                            printedOrganizations, outputBuffer); // Прокидываем буфер для совместимости
+                size_t pos = line.find('\t');
+                if (pos != string::npos) {
+                    string orgName = line.substr(0, pos);
+                    if (printedOrganizations.find(orgName) == printedOrganizations.end()) {
+                        processOrganization(orgName, correspondenceFilename, addressesFilename, false, &outfile, printedOrganizations, outputBuffer);
+                    }
                 }
             }
             addrFile.close();
         }
+        else {
+            cerr << "Ошибка: не удалось открыть файл адресов.\n";
+        }
         outfile.close();
-        cout << "\nИнформация успешно записана в файл: " << outputFilename << endl;
+        cout << "Информация успешно записана в файл output.txt.\n";
+
+        cout << "Нажмите любую клавишу для возврата в главное меню...\n"; // Добавлено
+        _getch();                                                        // Добавлено
+        system("cls");                                                    // Добавлено
+
         break;
     }
     case 27:
-        return;
+        return;  // Сразу выходим, если ESC
     default:
         cerr << "Неверный выбор.\n";
+        cout << "Нажмите любую клавишу для продолжения...\n";
+        _getch();
     }
-
-    cout << "Нажмите любую клавишу для возврата в меню...";
-    _getch();
 }
 
 /** @brief Отображает главное меню. */
 void menu() {
-    bool folderPathSet = false;
     string correspondenceFilename, addressesFilename, outputFilename;
-    string currentFolderPath = "";
-    const string instructionsFile = "instructions.txt";
+    string escPressed; //Для отслеживания esc в getFileName
+    bool folderPathSet = true;
+    currentFolderPath = normalizePath(filesystem::current_path().string()) + "\\";
+    const string instructionsFile = currentFolderPath + "instructions.txt";
+
+    cout << "\nПрограмма для обработки данных о корреспонденции и адресах организаций.\n";
+    cout << "Она позволяет искать информацию об организациях и их корреспонденции, а также формировать отчеты.\n";
 
     while (true) {
         system("cls");
         cout << "Главное меню:\n";
-        cout << "1. Начать работу ";
-        if (!folderPathSet)
-            cout << "(сначала укажите путь к папке)\n";
-        else
-            cout << '\n';
-        cout << "2. Путь к папке\n";
+        cout << "1. Начать работу\n";
+        cout << "2. Изменить путь к папке\n";
         cout << "3. Инструкция\n\n";
         cout << "Текущий путь: " << currentFolderPath << "\n\n";
-        cout << "Esc - Выход\n\n";
-        cout << "> ";
+        cout << "Esc - выход\n\n";
 
         char mainChoice = _getch();
 
         switch (mainChoice) {
-        case '1':
-            if (!folderPathSet) {
-                cerr << "Ошибка: сначала укажите путь к папке.\n";
-                _getch();
+        case '1': {
+            pair<string, string> filenames;
+
+            filenames = getFilenamesFromUser(currentFolderPath);
+            if (filenames.first.empty() && filenames.second.empty()) {
+                break;  // Прерываем "Начать работу", если ввод файлов отменен
             }
-            else
-                runProgram(currentFolderPath, correspondenceFilename, addressesFilename,
-                    outputFilename);
+            correspondenceFilename = filenames.first;
+            addressesFilename = filenames.second;
+            runProgram(currentFolderPath, correspondenceFilename, addressesFilename,
+                outputFilename);
             break;
+        }
         case '2': {
-            cout << "Введите путь к папке: ";
-            getline(cin, currentFolderPath);
+            string newPath = getLineWithEsc("Введите новый путь к папке: ");
+            newPath = normalizePath(newPath); // Нормализация введенного пути
 
+            // Проверка существования директории
             struct stat buffer;
-            if (stat(currentFolderPath.c_str(), &buffer) != 0) {
-                if (errno == ENOENT)
-                    cerr << "Ошибка: указанный путь не существует.\n";
-                else
-                    cerr << "Ошибка: не удалось проверить путь к папке. Код ошибки: "
-                    << errno << "\n";
-
-                // Очистка currentFolderPath при ошибке
-                currentFolderPath = "";
-                folderPathSet = false; // Сброс флага
-                _getch();
-                continue; // Возврат в начало цикла, если путь некорректен
+            if (stat(newPath.c_str(), &buffer) == 0 && (buffer.st_mode & S_IFDIR)) {
+                currentFolderPath = newPath + "\\";
+                cout << "Путь успешно изменен.\n";
             }
-
-            if (currentFolderPath.back() != '\\')
-                currentFolderPath += '\\';
-
-            folderPathSet = true;
-            cout << "\nТекущий путь к папке: " << currentFolderPath << endl;
-            cout << "Нажмите любую клавишу для продолжения...";
+            else {
+                cerr << "Ошибка: указанный путь не существует или не является директорией.\n";
+            }
+            cout << "Нажмите любую клавишу для продолжения...\n";
             _getch();
             break;
         }
@@ -417,4 +382,10 @@ void menu() {
             cerr << "Неверный выбор.\n";
         }
     }
+}
+
+string normalizePath(const string& path) {
+    namespace fs = std::filesystem;
+    fs::path normalizedPath = fs::absolute(path);
+    return normalizedPath.string();
 }

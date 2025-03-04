@@ -1,5 +1,3 @@
-//Lab_prog_2.h
-
 #pragma once
 
 #include <algorithm>
@@ -16,65 +14,41 @@
 #include <sys/stat.h>
 #include <vector>
 #include <Windows.h>
+#include <filesystem>
 
 #ifdef max
 #undef max
 #endif
-
-//using namespace std; //  Удалено из заголовочного файла
 
 // Глобальная переменная для хранения текущего пути к папке с данными
 extern std::string currentFolderPath;
 
 // Объявление констант
 namespace Constants {
-    const std::string INSTRUCTIONS_FILE = "instructions.txt"; // Имя файла с инструкциями
-    const int MAX_MENU_CHOICE = 3;       // Максимальный выбор в меню
-} // namespace Constants
+    const std::string INSTRUCTIONS_FILE = "instructions.txt";
+}
 
-// Структуры данных
 struct Correspondence {
-    std::string type;       // Тип корреспонденции
-    std::string date;       // Дата корреспонденции
-    std::string organization; // Название организации
+    std::string type;
+    std::string date;
+    std::string organization;
 };
 
 struct Address {
-    std::string organization; // Название организации
-    std::string address;      // Адрес организации
-    std::string contactPerson;  // Контактное лицо
+    std::string organization;
+    std::string address;
+    std::string contactPerson;
 };
 
-/** @brief Выводит табуляцию. */
-void tabul(int x);
-
-/** @brief Определяет, является ли год високосным. */
 bool is_leap(int year);
-
-/** @brief Проверяет допустимость ФИО. */
 bool isValidFio(const std::string& fio);
-
-/** @brief Проверяет допустимость формата даты. */
 bool isValidDate(const std::string& dateStr);
-
-/** @brief Проверяет допустимость имени файла. */
 bool isValidFileName(const std::string& fileName);
-
-/** @brief Читает инструкции из файла. */
 void readInstructionsFromFile(const std::string& filename);
-
-/** @brief Обрабатывает информацию об организации. */
-void processOrganization(const std::string& orgName, const std::string& corrFilename,
-    const std::string& addrFilename, bool selectiveOutput,
-    std::ofstream* outfile,
-    std::set<std::string>& printedOrganizations);
-
-/** @brief Запрашивает имена файлов у пользователя. */
+void processOrganization(const std::string& orgName, const std::string& corrFilename, const std::string& addrFilename, bool selectiveOutput, std::ofstream* outfile, std::set<std::string>& printedOrganizations, std::vector<std::string>& outputBuffer);
 std::pair<std::string, std::string> getFilenamesFromUser(const std::string& folderPath);
-
-/** @brief Запускает основной процесс программы. */
-void runProgram(std::string& folderPath, std::string& correspondenceFilename,
-    std::string& addressesFilename, std::string& outputFilename);
-
-/** @brief Отображает главное меню. */
+void runProgram(const std::string& folderPath, const std::string& correspondenceFilename, const std::string& addressesFilename, std::string& outputFilename);
 void menu();
+std::string normalizePath(const std::string& path);
+
+std::string getLineWithEsc(const std::string& instruction);
