@@ -40,9 +40,6 @@ struct Address {
     std::string contactPerson;
 };
 
-bool is_leap(int year);
-bool isValidFio(const std::string& fio);
-bool isValidDate(const std::string& dateStr);
 bool isValidFileName(const std::string& fileName);
 void readInstructionsFromFile(const std::string& filename);
 void processOrganization(const std::string& orgName, const std::string& corrFilename, const std::string& addrFilename, bool selectiveOutput, std::ofstream* outfile, std::set<std::string>& printedOrganizations, std::vector<std::string>& outputBuffer);
@@ -50,5 +47,4 @@ std::pair<std::string, std::string> getFilenamesFromUser(const std::string& fold
 void runProgram(const std::string& folderPath, const std::string& correspondenceFilename, const std::string& addressesFilename, std::string& outputFilename);
 void menu();
 std::string normalizePath(const std::string& path);
-
 std::string getLineWithEsc(const std::string& instruction);
