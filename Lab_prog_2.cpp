@@ -41,9 +41,9 @@ string getLineWithEsc(const string& instruction) {
             }
         }
         // Разрешены: латиница, кириллица, цифры, пробел, точка, тире, подчеркивание
-         else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
-                   (ch >= 'а' && ch <= 'я') || (ch >= 'А' && ch <= 'Я') ||
-                   (ch >= '0' && ch <= '9') || ch == ' ' || ch == '.' || ch == '-' || ch == '_')
+        else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+            (ch >= 'а' && ch <= 'я') || (ch >= 'А' && ch <= 'Я') ||
+            (ch >= '0' && ch <= '9') || ch == ' ' || ch == '.' || ch == '-' || ch == '_')
         {
             input += ch;
             cout << ch;
@@ -53,7 +53,6 @@ string getLineWithEsc(const string& instruction) {
 
 /** @brief Читает инструкции из файла. */
 void readInstructionsFromFile(const string& filename) {
-    system("mode con cols=150 lines=36");
     ifstream file(filename);
     if (file.is_open()) {
         string line;
@@ -65,7 +64,7 @@ void readInstructionsFromFile(const string& filename) {
         cerr << "Не удалось открыть файл инструкции: " << filename << endl;
         cerr << "Пожалуйста, поместите файл instructions.txt в ту же папку, где находится исполняемый файл программы.\n";
     }
-    cout << "\nНажмите любую клавишу для продолжения...\n";
+    cout << "\nНажмите любую клавишу для возврата в главное меню...\n";
     _getch();
     system("mode con cols=120 lines=30");
 }
@@ -73,8 +72,7 @@ void readInstructionsFromFile(const string& filename) {
 /** @brief Обрабатывает информацию об организации.
  *  Находит и выводит данные организации из файлов корреспонденции и адресов.
  */
-void processOrganization(const string& orgName, const string& corrFilename, const string& addrFilename,
-    bool selectiveOutput, ofstream* outfile, set<string>& printedOrganizations, vector<string>& outputBuffer, const string& folderPath) {
+void processOrganization(const string& orgName, const string& corrFilename, const string& addrFilename, bool selectiveOutput, ofstream* outfile, set<string>& printedOrganizations, vector<string>& outputBuffer) {
     ifstream corrFile(corrFilename);
     ifstream addrFile(addrFilename);
     vector<pair<string, string>> addresses;
@@ -107,7 +105,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
         addrFile.close();
     }
     else {
-        writeToBuffer("Не удалось открыть файл адресов: " + folderPath+ addrFilename);
+        writeToBuffer("Не удалось открыть файл адресов: " + corrFilename);
         return;
     }
 
@@ -159,8 +157,6 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
         if (selectiveOutput ||
             (outfile && printedOrganizations.find(orgName) !=
                 printedOrganizations.end())) {
-            ifstream corrFile(folderPath + corrFilename);
-
             if (corrFile.is_open()) {
                 string line;
                 getline(corrFile, line); // Пропустить заголовок
@@ -195,7 +191,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
                 corrFile.close();
             }
             else
-                writeToBuffer("Не удалось открыть файл корреспонденции: " + folderPath + corrFilename);
+                writeToBuffer("Не удалось открыть файл корреспонденции: " + corrFilename);
         }
     }
     if (selectiveOutput)
@@ -208,17 +204,38 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
 pair<string, string> getFilenamesFromUser(const string& folderPath) {
     string correspondenceFilename, addressesFilename;
 
-    correspondenceFilename = getLineWithEsc("Введите имя файла с исходящей корреспонденцией (без расширения) или нажмите Esc для отмены: ");
-    if (correspondenceFilename.empty()) {
-        return { "", "" };
+    while (true) {
+        correspondenceFilename = getLineWithEsc("Введите имя файла с исходящей корреспонденцией (без расширения) или нажмите Esc для отмены: ");
+        if (correspondenceFilename.empty()) {
+            return { "", "" };
+        }
+
+        string fullCorrFilename = folderPath + "IC_" + correspondenceFilename + ".txt";
+        if (!filesystem::exists(fullCorrFilename)) {
+            cerr << "Ошибка: Файл " << fullCorrFilename << " не существует.\n";
+            cout << "Пожалуйста, попробуйте еще раз.\n";
+            continue;
+        }
+        break; // Выходим из цикла, если файл существует
     }
 
-    addressesFilename = getLineWithEsc("Введите имя файла с адресами организаций (без расширения) или нажмите Esc для отмены: ");
-    if (addressesFilename.empty()) {
-        return { "", "" };
+    while (true) {
+        addressesFilename = getLineWithEsc("Введите имя файла с адресами организаций (без расширения) или нажмите Esc для отмены: ");
+        if (addressesFilename.empty()) {
+            return { "", "" };
+        }
+
+        string fullAddressesFilename = folderPath + "AO_" + addressesFilename + ".txt";
+        if (!filesystem::exists(fullAddressesFilename)) {
+            cerr << "Ошибка: Файл " << fullAddressesFilename << " не существует.\n";
+            cout << "Пожалуйста, попробуйте еще раз.\n";
+            continue;
+        }
+        break; // Выходим из цикла, если файл существует
     }
 
-    return { correspondenceFilename, addressesFilename };
+    return { folderPath + "IC_" + correspondenceFilename + ".txt",
+             folderPath + "AO_" + addressesFilename + ".txt" };
 }
 
 /** @brief Запускает основной процесс программы. */
@@ -226,7 +243,6 @@ void runProgram(const string& folderPath, const string& correspondenceFilename,
     const string& addressesFilename, string& outputFilename) {
 
     while (true) { // Добавлен бесконечный цикл для выбора режима вывода
-        bool escPressed = false; // Локальная переменная для runProgram
         cout << "\nВыберите режим вывода:\n";
         cout << "1. Избирательный вывод на экран\n";
         cout << "2. Полный вывод в файл\n";
@@ -239,90 +255,100 @@ void runProgram(const string& folderPath, const string& correspondenceFilename,
             cerr << "Неверный выбор.\n";
             cout << "Нажмите любую клавишу для продолжения...\n";
             _getch();
-             continue;
+            continue;
         }
         cout << endl;
 
         switch (choice) {
-            case '1': {
-                string orgName = getLineWithEsc("Введите название организации для поиска или нажмите Esc для отмены: ");
-                if (orgName.empty()) {
-                    break; // Выход из case '1', возврат в цикл выбора режима
-                }
-
-                ofstream* outfile = nullptr;  // Указатель на ofstream, инициализируем nullptr
-                set<string> printedOrganizations;
-                vector<string> outputBuffer;
-                processOrganization(orgName, correspondenceFilename, addressesFilename,
-                                    true, outfile, printedOrganizations, outputBuffer, folderPath);
-
-                // Вывод в консоль
-                for (const string& line : outputBuffer) {
-                    cout << line << endl;
-                }
-
-                cout << "Нажмите любую клавишу для возврата в главное меню...\n"; // Добавлено
-                _getch();                                                        // Добавлено
-                system("cls");                                                    // Добавлено
+        case '1': {
+            string orgName = getLineWithEsc("Введите название организации для поиска или нажмите Esc для отмены: ");
+            if (orgName.empty()) {
                 break; // Выход из case '1', возврат в цикл выбора режима
             }
-            case '2': {
-                // Формируем базовое имя файла
-                string baseFilename = folderPath + "Отчет_IC_" + correspondenceFilename + "_AO_" + addressesFilename;
-                string filename = baseFilename + ".txt";
-                int i = 1;
-                while (filesystem::exists(filename)) {
-                    filename = baseFilename + "(" + to_string(i++) + ")" + ".txt";
-                }
-                try {
-                    ofstream outfile(filename);
 
-                    if (!outfile.is_open()) {
-                        cerr << "Ошибка: не удалось открыть файл для записи.\n";
-                        break; // Выход из case '2', возврат в цикл выбора режима
-                    }
-                    set<string> printedOrganizations;
-                    vector<string> outputBuffer; // Этот буфер больше не нужен.
-                    ifstream addrFile(folderPath + addressesFilename);
+            ofstream* outfile = nullptr;  // Указатель на ofstream, инициализируем nullptr
+            set<string> printedOrganizations;
+            vector<string> outputBuffer;
+            processOrganization(orgName, correspondenceFilename, addressesFilename,
+                true, outfile, printedOrganizations, outputBuffer);
 
-                    if (addrFile.is_open()) {
-                        string line;
-                        getline(addrFile, line); // Пропустить заголовок
-                        while (getline(addrFile, line)) {
-                            size_t pos = line.find('\t');
-                            if (pos != string::npos) {
-                                string orgName = line.substr(0, pos);
-                                if (printedOrganizations.find(orgName) == printedOrganizations.end()) {
-                                    processOrganization(orgName, correspondenceFilename, addressesFilename, false, &outfile, printedOrganizations, outputBuffer, folderPath);  // Передаем &outfile
-                                }
-                            }
-                        }
-                        addrFile.close();
-                    }
-                    else {
-                        cerr << "Ошибка: не удалось открыть файл адресов: " + addressesFilename + ".\n";
-                            break;
-                    }
-                    outfile.close(); // Закрываем файл *перед* ожиданием
-                    cout << "Информация успешно записана в файл " << filename << ".\n";
+            // Вывод в консоль
+            for (const string& line : outputBuffer) {
+                cout << line << endl;
+            }
 
-                    cout << "Нажмите любую клавишу для возврата в главное меню...\n";
-                    _getch();
+            cout << "Нажмите любую клавишу для возврата в выбор режима вывода данных...\n"; // Добавлено
+            _getch();                                                        // Добавлено                                                   // Добавлено
+            break; // Выход из case '1', возврат в цикл выбора режима
+        }
+        case '2': {
+            // Получаем имена файлов (без путей)
+            string corrFileNameOnly = filesystem::path(correspondenceFilename).filename().string();
+            string addrFileNameOnly = filesystem::path(addressesFilename).filename().string();
+
+            // Удаляем расширение ".txt" (если оно есть)
+            size_t pos = corrFileNameOnly.rfind(".txt");
+            if (pos != string::npos) {
+                corrFileNameOnly = corrFileNameOnly.substr(0, pos);
+            }
+
+            pos = addrFileNameOnly.rfind(".txt");
+            if (pos != string::npos) {
+                addrFileNameOnly = addrFileNameOnly.substr(0, pos);
+            }
+
+            // Формируем базовое имя файла (используем только имена файлов, без путей)
+            string baseFilename = folderPath + "Отчет_" + corrFileNameOnly + "_" + addrFileNameOnly;
+            string filename = baseFilename + ".txt";
+            int i = 1;
+            while (filesystem::exists(filename)) {
+                filename = baseFilename + "(" + to_string(i++) + ")" + ".txt";
+            }
+            try {
+                ofstream outfile(filename);
+
+                if (!outfile.is_open()) {
+                    cerr << "Ошибка: не удалось открыть файл для записи.\n";
                     break; // Выход из case '2', возврат в цикл выбора режима
                 }
-                catch (const exception& e)
-                {
-                    cerr << "Exception occurred: " << e.what() << endl;
+                set<string> printedOrganizations;
+                vector<string> outputBuffer; // Этот буфер больше не нужен.
+                ifstream addrFile(addressesFilename);
+
+                if (addrFile.is_open()) {
+                    string line;
+                    getline(addrFile, line); // Пропустить заголовок
+                    while (getline(addrFile, line)) {
+                        size_t pos2 = line.find('\t');
+                        if (pos2 != string::npos) {
+                            string orgName = line.substr(0, pos2);
+                            if (printedOrganizations.find(orgName) == printedOrganizations.end()) {
+                                processOrganization(orgName, correspondenceFilename, addressesFilename, false, &outfile, printedOrganizations, outputBuffer);  // Передаем &outfile
+                            }
+                        }
+                    }
+                    addrFile.close();
+                }
+                else {
+                    cerr << "Ошибка: не удалось открыть файл адресов: " << addressesFilename << ".\n";
                     break;
                 }
-            }
-            case 27:
-                return;  // Сразу выходим, если ESC
+                outfile.close(); // Закрываем файл *перед* ожиданием
+                cout << "Информация успешно записана в файл " << filename << ".\n";
 
-            default:
-                cerr << "Неверный выбор.\n";
-                cout << "Нажмите любую клавишу для продолжения...\n";
+                cout << "Нажмите любую клавишу для возврата в главное меню...\n";
                 _getch();
+                break; // Выход из case '2', возврат в цикл выбора режима
+            }
+            catch (const exception& e)
+            {
+                cerr << "Ошибка: не удалось создать или записать файл.\n";
+                cerr << e.what() << endl;
+                break;
+            }
+        }
+        case 27:
+            return;  // Сразу выходим, если ESC
         }
     }
 }
@@ -346,7 +372,7 @@ void menu() {
         cout << "* Программа для обработки данных корреспонденции и адресов  *\n";
         cout << "* Программа позволяет искать и обрабатывать информацию об   *\n";
         cout << "* организациях на основе двух файлов -                      *\n";
-        cout << "* Исходящей корреспонденции (IC_ ***.txt)                   *\n";
+        cout << "* Исходящей корреспонденции (IC_***.txt)                    *\n";
         cout << "* Адресов организаций (AO_***.txt)                          *\n";
         cout << "*************************************************************\n\n";
 
@@ -357,52 +383,43 @@ void menu() {
         cout << "Текущий путь: " << currentFolderPath << "\n\n";
         cout << "Esc - выход\n\n";
 
-        char mainChoice = _getch();
+        int mainChoice = _getch();
         char mainChoiceChar = static_cast<char>(mainChoice);
 
-        if (mainChoiceChar != '1' && mainChoiceChar != '2' && mainChoice != 27 && mainChoiceChar != '3') {
-            cerr << "Неверный выбор.\n";
+        switch (mainChoice) {
+        case '1': {
+            pair<string, string> filenames = getFilenamesFromUser(currentFolderPath);
+            if (filenames.first.empty() && filenames.second.empty()) {
+                break;  // Прерываем "Начать работу", если ввод файлов отменен
+            }
+            correspondenceFilename = filenames.first;
+            addressesFilename = filenames.second;
+            runProgram(currentFolderPath, correspondenceFilename, addressesFilename, outputFilename); // Передаем filenames
+            break; // Выход из case '1'
+        }
+        case '2': {
+            string newPath = getLineWithEsc("Введите новый путь к папке: ");
+            if (newPath.empty()) break; //Если нажат Esc, то выходим из case '2'
+            newPath = normalizePath(newPath); // Нормализация введенного пути
+
+            // Проверка существования директории
+            struct stat buffer;
+            if (stat(newPath.c_str(), &buffer) == 0 && (buffer.st_mode & S_IFDIR)) {
+                currentFolderPath = newPath + "\\";
+                cout << "Путь успешно изменен.\n";
+            }
+            else {
+                cerr << "Ошибка: указанный путь не существует или не является директорией.\n";
+            }
             cout << "Нажмите любую клавишу для продолжения...\n";
             _getch();
-             continue;
+            break;
         }
-
-        switch (mainChoice) {
-            case '1': {
-                pair<string, string> filenames = getFilenamesFromUser(currentFolderPath);
-                if (filenames.first.empty() && filenames.second.empty()) {
-                    break;  // Прерываем "Начать работу", если ввод файлов отменен
-                }
-                correspondenceFilename = filenames.first;
-                addressesFilename = filenames.second;
-                runProgram(currentFolderPath, correspondenceFilename, addressesFilename, outputFilename); // Передаем filenames
-                break; // Выход из case '1'
-            }
-            case '2': {
-                string newPath = getLineWithEsc("Введите новый путь к папке: ");
-                if(newPath.empty()) break; //Если нажат Esc, то выходим из case '2'
-                newPath = normalizePath(newPath); // Нормализация введенного пути
-
-                // Проверка существования директории
-                struct stat buffer;
-                if (stat(newPath.c_str(), &buffer) == 0 && (buffer.st_mode & S_IFDIR)) {
-                    currentFolderPath = newPath + "\\";
-                    cout << "Путь успешно изменен.\n";
-                } else {
-                    cerr << "Ошибка: указанный путь не существует или не является директорией.\n";
-                }
-                cout << "Нажмите любую клавишу для продолжения...\n";
-                _getch();
-                break;
-            }
-            case 3: {
-                readInstructionsFromFile(instructionsFile);
-                break;
-            }
-            case 27:
-                return;
-            default:
-                cerr << "Неверный выбор.\n";
+        case '3':
+            readInstructionsFromFile(instructionsFile);
+            break;
+        case 27:
+            return;
         }
     }
 }
