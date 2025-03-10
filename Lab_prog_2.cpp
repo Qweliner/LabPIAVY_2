@@ -53,6 +53,7 @@ string getLineWithEsc(const string& instruction) {
 
 /** @brief Читает инструкции из файла. */
 void readInstructionsFromFile(const string& filename) {
+    system("mode con cols=150 lines=36");
     ifstream file(filename);
     if (file.is_open()) {
         string line;
@@ -205,7 +206,7 @@ pair<string, string> getFilenamesFromUser(const string& folderPath) {
     string correspondenceFilename, addressesFilename;
 
     while (true) {
-        correspondenceFilename = getLineWithEsc("Введите имя файла с исходящей корреспонденцией (без расширения) или нажмите Esc для отмены: ");
+        correspondenceFilename = getLineWithEsc("Введите имя файла с исходящей корреспонденцией (префикса IC_ и без расширения .txt) или нажмите Esc для отмены: ");
         if (correspondenceFilename.empty()) {
             return { "", "" };
         }
@@ -220,7 +221,7 @@ pair<string, string> getFilenamesFromUser(const string& folderPath) {
     }
 
     while (true) {
-        addressesFilename = getLineWithEsc("Введите имя файла с адресами организаций (без расширения) или нажмите Esc для отмены: ");
+        addressesFilename = getLineWithEsc("Введите имя файла с адресами организаций (префикса AO_ и без расширения .txt) или нажмите Esc для отмены: ");
         if (addressesFilename.empty()) {
             return { "", "" };
         }
@@ -239,10 +240,11 @@ pair<string, string> getFilenamesFromUser(const string& folderPath) {
 }
 
 /** @brief Запускает основной процесс программы. */
+/** @brief Запускает основной процесс программы. */
 void runProgram(const string& folderPath, const string& correspondenceFilename,
     const string& addressesFilename, string& outputFilename) {
 
-    while (true) { // Добавлен бесконечный цикл для выбора режима вывода
+    while (true) { // Бесконечный цикл для выбора режима вывода
         cout << "\nВыберите режим вывода:\n";
         cout << "1. Избирательный вывод на экран\n";
         cout << "2. Полный вывод в файл\n";
@@ -252,10 +254,7 @@ void runProgram(const string& folderPath, const string& correspondenceFilename,
         char choice = _getch();
         char choiceChar = static_cast<char>(choice);
         if (choiceChar != '1' && choiceChar != '2' && choice != 27) {
-            cerr << "Неверный выбор.\n";
-            cout << "Нажмите любую клавишу для продолжения...\n";
-            _getch();
-            continue;
+            continue; // Просто переходим к следующей итерации, игнорируя ввод
         }
         cout << endl;
 
@@ -276,10 +275,8 @@ void runProgram(const string& folderPath, const string& correspondenceFilename,
             for (const string& line : outputBuffer) {
                 cout << line << endl;
             }
+            break; // Возврат в цикл выбора режима вывода
 
-            cout << "Нажмите любую клавишу для возврата в выбор режима вывода данных...\n"; // Добавлено
-            _getch();                                                        // Добавлено                                                   // Добавлено
-            break; // Выход из case '1', возврат в цикл выбора режима
         }
         case '2': {
             // Получаем имена файлов (без путей)
@@ -335,10 +332,8 @@ void runProgram(const string& folderPath, const string& correspondenceFilename,
                 }
                 outfile.close(); // Закрываем файл *перед* ожиданием
                 cout << "Информация успешно записана в файл " << filename << ".\n";
+                break; // Возврат в цикл выбора режима вывода
 
-                cout << "Нажмите любую клавишу для возврата в главное меню...\n";
-                _getch();
-                break; // Выход из case '2', возврат в цикл выбора режима
             }
             catch (const exception& e)
             {
@@ -349,6 +344,9 @@ void runProgram(const string& folderPath, const string& correspondenceFilename,
         }
         case 27:
             return;  // Сразу выходим, если ESC
+        default:
+            // Ничего не делаем при неверном вводе.
+            continue;
         }
     }
 }
@@ -409,7 +407,7 @@ void menu() {
                 cout << "Путь успешно изменен.\n";
             }
             else {
-                cerr << "Ошибка: указанный путь не существует или не является директорией.\n";
+                cerr << "Ошибка: указанный путь не существует или не доступен.\n";
             }
             cout << "Нажмите любую клавишу для продолжения...\n";
             _getch();
@@ -420,6 +418,9 @@ void menu() {
             break;
         case 27:
             return;
+        default:
+            // Ничего не делаем при неверном вводе.
+            continue;
         }
     }
 }
