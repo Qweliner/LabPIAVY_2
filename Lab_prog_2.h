@@ -30,7 +30,7 @@ namespace Constants {
 
 // Структура для хранения данных о корреспонденции.
 struct Correspondence {
-    std::string type;       // Тип корреспонденции.
+    std::string type;       // Вид корреспонденции.
     std::string date;       // Дата корреспонденции.
     std::string organization; // Название организации.
 };
@@ -39,7 +39,7 @@ struct Correspondence {
 struct Address {
     std::string organization; // Название организации.
     std::string address;      // Адрес организации.
-    std::string contactPerson;  // Контактное лицо.
+    std::string contactPerson;  // ФИО организатора.
 };
 
 /** @brief Проверяет, является ли год високосным. */
