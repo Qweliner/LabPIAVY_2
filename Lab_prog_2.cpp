@@ -1,3 +1,4 @@
+//Lab_prog_2.cpp
 #include "Lab_prog_2.h"
 #include <algorithm>
 #include <fstream>
@@ -108,7 +109,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
     }
 
     if (!orgFoundInAddress && selectiveOutput) {
-        writeToBuffer("Организация \"" + orgName + "\" не найдена в файле адресов.");
+        writeToBuffer("Название организации \"" + orgName + "\" не найдена в файле адресов.");
         return;
     }
 
@@ -116,15 +117,15 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
     if (!selectiveOutput)
     {
         if (printedOrganizations.count(orgName)) {
-            return; // Организация уже была обработана
+            return; // Название организации уже была обработана
         }
         printedOrganizations.insert(orgName); // Помечаем организацию как обработанную
         // Вывод информации об организации (из файла адресов)
-        writeToBuffer("Организация: " + orgName);
+        writeToBuffer("Название организации: " + orgName);
 
         for (const auto& addr : addresses) {
             writeToBuffer("Адрес: " + addr.address);
-            writeToBuffer("ФИО Организатора: " + addr.contactPerson);
+            writeToBuffer("Фамилия руководителя: " + addr.contactPerson);
         }
 
         // Поиск и вывод корреспонденции для организации
@@ -142,7 +143,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
                 if (currentOrg == orgName) {
                     foundCorrespondence = true;
                     writeToBuffer("\tВид корреспонденции: " + type);
-                    writeToBuffer("\tДата: " + date);
+                    writeToBuffer("\tДата подготовки: " + date);
                 }
             }
             if (!foundCorrespondence) {
@@ -159,16 +160,16 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
     //Если это поиск
     if (selectiveOutput && orgFoundInAddress)
     {
-        writeToBuffer("Организация: " + orgName);
+        writeToBuffer("Название организации: " + orgName);
         if (!addresses.empty()) {
-            writeToBuffer("Адрес: " + addresses[0].address); // Выводим первый адрес
-            writeToBuffer("ФИО организатора: " + addresses[0].contactPerson); // Первое ФИО организатора
+            writeToBuffer("Адрес: " + addresses[0].address);
+            writeToBuffer("Фамилия руководителя: " + addresses[0].contactPerson);
 
             if (addresses.size() > 1) {
                 writeToBuffer("\nДругие найденные данные компании:\n");
                 for (size_t i = 1; i < addresses.size(); ++i) {
                     writeToBuffer("Адрес: " + addresses[i].address);
-                    writeToBuffer("ФИО организатора: " + addresses[i].contactPerson);
+                    writeToBuffer("Фамилия руководителя: " + addresses[i].contactPerson);
                 }
             }
         }
@@ -187,7 +188,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
                 if (currentOrg == orgName) {
                     foundCorrespondence = true;
                     writeToBuffer("\tВид корреспонденции: " + type);
-                    writeToBuffer("\tДата: " + date);
+                    writeToBuffer("\tДата подготовки: " + date);
                 }
             }
             if (!foundCorrespondence) {
@@ -405,10 +406,12 @@ void menu() {
             if (newPath.empty()) break;
             newPath = normalizePath(newPath); // Нормализуем путь
 
-            // Проверяем, существует ли папка и является ли она директорией
             struct stat buffer;
+
+            // Проверка на то, существует ли папка и является ли она директорией
             if (stat(newPath.c_str(), &buffer) == 0 && (buffer.st_mode & S_IFDIR)) {
-                currentFolderPath = newPath + "\\"; // Добавляем разделитель
+                if (newPath.back() != '\\') // Проверка есть ли \ в конце пути
+                    currentFolderPath = newPath + "\\"; // Добавляем разделитель
                 cout << "Путь успешно изменен.\n";
             }
             else {
