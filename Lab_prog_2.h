@@ -1,84 +1,102 @@
+//Lab_prog_2.h
 #pragma once
 
-#include <algorithm>
-#include <cctype>
-#include <conio.h>
-#include <fstream>
+// Стандартные C++ заголовки, которые все еще нужны
 #include <iostream>
-#include <limits>
-#include <locale>
-#include <map>
+#include <fstream>
+#include <string>
+#include <vector>
 #include <set>
 #include <sstream>
-#include <string>
-#include <sys/stat.h>
-#include <vector>
-#include <Windows.h>
-#include <filesystem>
+#include <algorithm>
+#include <filesystem> // Для filesystem::exists и filesystem::path
 
-#ifdef max  // Нужно для Visual Studio, чтобы не было конфликтов с <limits>
+// Заголовки из первой программы (стиль C)
+#include <cstdio>
+#include <cstring>
+#include <conio.h>   // Для _getch, _kbhit
+#include <windows.h> // Для SetConsoleCP, SetConsoleOutputCP, OpenClipboard, GetClipboardData, GlobalLock, GlobalUnlock, CloseClipboard
+#include <direct.h>  // Для _getcwd
+#include <sys/stat.h> // Для stat
+#include <cstdlib>   // Для _fullpath
+#include <cctype>    // Для isdigit, tolower
+
+#ifdef max
 #undef max
 #endif
 
-// Глобальная переменная для хранения текущего пути к папке с данными.
-extern std::string currentFolderPath;
+// --- Глобальные переменные и константы из первой программы ---
+extern char folder_way[256]; // Путь к папке (стиль C)
+extern const char* file_extension;
+extern const char* ocfe; // Префикс для файлов корреспонденции
+extern const char* oa;   // Префикс для файлов адресов
 
-// Объявление констант.
+// Макрос для безопасного копирования строк
+#define SAFE_STRCPY(dest, src, size) strcpy_s(dest, size, src)
+
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
+
+// --- Константы и структуры из второй программы ---
 namespace Constants {
     const std::string INSTRUCTIONS_FILE = "instructions.txt"; // Имя файла с инструкциями.
 }
 
-// Структура для хранения данных о корреспонденции.
 struct Correspondence {
-    std::string type;       // Вид корреспонденции.
-    std::string date;       // Дата подготовки корреспонденции.
-    std::string organization; // Название организации.
+    std::string type;
+    std::string date;
+    std::string organization;
 };
 
-// Структура для хранения данных об адресе организации.
 struct Address {
-    std::string organization; // Название организации.
-    std::string address;      // Адрес организации.
-    std::string contactPerson;  // Фамилия руководителя.
+    std::string organization;
+    std::string address;
+    std::string contactPerson;
 };
 
-/** @brief Проверяет, является ли год високосным. */
-bool is_leap(int year);
+// --- Функции из первой программы (ввод и работа с путем) ---
 
-/** @brief Проверяет допустимость ФИО. */
-bool isValidFio(const std::string& fio);
+/** @brief Функция проверки символа для имени файла */
+bool isValidFileNameChar(char c);
 
-/** @brief Проверяет допустимость формата даты. */
-bool isValidDate(const std::string& dateStr);
+/** @brief Функция проверки символа для пути */
+bool isValidPathChar(char c);
 
-/** @brief Проверяет допустимость имени файла. */
-bool isValidFileName(const std::string& fileName);
+/** @brief Функция для получения строки с консоли с фильтрацией символов */
+void getLineWithRestrictedChars(const char* instruction, char* buffer, int buffer_size, bool (*isValidCharFunc)(char));
 
-/** @brief Читает инструкции из файла. */
+/** @brief Функция нормализации пути (упрощенная для Windows) */
+void normalizePath(const char* path, char* normalized_path, size_t normalized_path_size);
+
+/** @brief Функция выбора пути к папке (аналог program_way) */
+void selectFolderPath();
+
+// --- Функции из второй программы (основная логика) ---
+
+/** @brief Читает инструкции из файла */
 void readInstructionsFromFile(const std::string& filename);
 
-/** @brief Обрабатывает информацию об организации.
- *  Находит и выводит данные организации из файлов корреспонденции и адресов.
- */
+/** @brief Обрабатывает информацию об организации */
 void processOrganization(const std::string& orgName, const std::string& corrFilename,
     const std::string& addrFilename, bool selectiveOutput, std::ofstream* outfile,
     std::set<std::string>& printedOrganizations, std::vector<std::string>& outputBuffer);
 
-/** @brief Запрашивает имена файлов у пользователя. */
-std::pair<std::string, std::string> getFilenamesFromUser(const std::string& folderPath);
+/** @brief Запрашивает имена файлов у пользователя (адаптировано под C-стиль пути) */
+std::pair<std::string, std::string> getFilenamesFromUser(const char* folderPath);
 
-/** @brief Запускает основной процесс программы. */
-void runProgram(const std::string& folderPath, const std::string& correspondenceFilename,
+/** @brief Запускает основной процесс программы (адаптировано под C-стиль пути) */
+void runProgram(const char* folderPath, const std::string& correspondenceFilename,
     const std::string& addressesFilename, std::string& outputFilename);
 
-/** @brief Отображает главное меню. */
+/** @brief Отображает главное меню */
 void menu();
 
-/** @brief Нормализует путь к файлу, делая его абсолютным. */
-std::string normalizePath(const std::string& path);
-
-/** @brief Выполняет чтение строки из консоли с поддержкой Esc и Backspace, а также фильтрацией.
- *  @param instruction Сообщение, отображаемое пользователю перед вводом.
- *  @return Введенная строка, или пустая строка, если был нажат Esc.
- */
-std::string getLineWithEsc(const std::string& instruction);
+// Функции isValidDate, is_leap, isValidFio, isValidFileName больше не нужны напрямую,
+// так как валидация происходит в первой программе при вводе.
+// Но processOrganization может их использовать неявно, если логика осталась.
+// Оставим на всякий случай, если они где-то еще вызываются, но их реализация тут не приведена.
+// bool is_leap(int year);
+// bool isValidFio(const std::string& fio);
+// bool isValidDate(const std::string& dateStr);
+// bool isValidFileName(const std::string& fileName);
