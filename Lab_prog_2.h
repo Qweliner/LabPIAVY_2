@@ -91,12 +91,3 @@ void runProgram(const char* folderPath, const std::string& correspondenceFilenam
 
 /** @brief Отображает главное меню */
 void menu();
-
-// Функции isValidDate, is_leap, isValidFio, isValidFileName больше не нужны напрямую,
-// так как валидация происходит в первой программе при вводе.
-// Но processOrganization может их использовать неявно, если логика осталась.
-// Оставим на всякий случай, если они где-то еще вызываются, но их реализация тут не приведена.
-// bool is_leap(int year);
-// bool isValidFio(const std::string& fio);
-// bool isValidDate(const std::string& dateStr);
-// bool isValidFileName(const std::string& fileName);

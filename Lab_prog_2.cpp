@@ -5,13 +5,10 @@
 
 using namespace std;
 
-// --- Глобальные переменные (определения) ---
 char folder_way[256] = { 0 };
 const char* file_extension = ".txt";
 const char* ocfe = "IC_";
 const char* oa = "AO_";
-
-// --- Реализации функций проверки символов ---
 
 // Функция проверки символа для имени файла
 bool isValidFileNameChar(char c) {
@@ -25,7 +22,7 @@ bool isValidPathChar(char c) {
     return (uc != '*' && uc != '?' && uc != '"' && uc != '<' && uc != '>' && uc != '|');
 }
 
-// Функция проверки символа для названия организации (из первой программы)
+// Функция проверки символа для названия организации
 bool isValidOrgNameChar(char c) { // <-- РЕАЛИЗАЦИЯ НОВОЙ ФУНКЦИИ
     unsigned char uc = (unsigned char)c;
     bool is_letter = (uc >= 'A' && uc <= 'Z') || (uc >= 'a' && uc <= 'z') || (uc >= 192); // Латиница + Кириллица (грубо)
@@ -34,8 +31,6 @@ bool isValidOrgNameChar(char c) { // <-- РЕАЛИЗАЦИЯ НОВОЙ ФУНКЦИИ
     // Точная логика из openFileForAppend для поля "Название организации"
     return (is_letter || is_digit || is_space || uc == '-' || uc == '_' || uc == '.' || uc == ',' || uc == '"' || uc == '(' || uc == ')' || uc == 211 || uc == '+' || uc == '!' || uc == '&' || uc == ':' || uc == 171 || uc == 187 || uc == '#'); // №(211), «(171), »(187)
 }
-
-// --- Реализации функций ввода и работы с путем ---
 
 // Функция для получения строки с консоли с фильтрацией символов
 // Принимает указатель на функцию проверки isValidCharFunc
@@ -77,7 +72,7 @@ void getLineWithRestrictedChars(const char* instruction, char* buffer, int buffe
                     if (pszText != NULL) {
                         // Используем переданную функцию isValidCharFunc для проверки вставляемых символов
                         for (int j = 0; pszText[j] != '\0' && i < buffer_size - 1; ++j) {
-                            if (isValidCharFunc(pszText[j])) { // <--- Проверка здесь
+                            if (isValidCharFunc(pszText[j])) { //   Проверка здесь
                                 buffer[i++] = pszText[j];
                                 printf("%c", pszText[j]);
                             }
@@ -91,7 +86,7 @@ void getLineWithRestrictedChars(const char* instruction, char* buffer, int buffe
         else {
             char c = (char)key;
             // Используем переданную функцию isValidCharFunc для проверки вводимых символов
-            if (isValidCharFunc(c)) { // <--- Проверка здесь
+            if (isValidCharFunc(c)) { //   Проверка здесь
                 if (i < buffer_size - 1) {
                     buffer[i] = c;
                     printf("%c", c);
@@ -102,7 +97,7 @@ void getLineWithRestrictedChars(const char* instruction, char* buffer, int buffe
     }
 }
 
-// Функция нормализации пути (без изменений)
+// Функция нормализации пути  
 void normalizePath(const char* path, char* normalized_path, size_t normalized_path_size) {
     if (path[0] == '\0') {
         if (_getcwd(normalized_path, normalized_path_size) == NULL) {
@@ -158,7 +153,7 @@ void selectFolderPath() {
     char normalized_path_temp[256];
 
     // Используем isValidPathChar для проверки пути
-    getLineWithRestrictedChars("Введите путь к папке: ", folder_way_new, sizeof(folder_way_new), isValidPathChar); // <--- Передача функции
+    getLineWithRestrictedChars("Введите путь к папке: ", folder_way_new, sizeof(folder_way_new), isValidPathChar); //   Передача функции
 
     if (folder_way_new[0] == '\0') {
         return;
@@ -209,34 +204,38 @@ void selectFolderPath() {
         }
     }
 
-    printf("Для продолжения нажмите Enter.");
-    // Очистка буфера ввода после _getch
-    int c; while ((c = getchar()) != '\n' && c != EOF);
+    cout << "Нажмите любую клавишу для продолжения..." << endl; _getch();
 }
 
-// --- Реализации функций из второй программы (адаптированные) ---
-
-// readInstructionsFromFile (без изменений)
+// readInstructionsFromFile
 void readInstructionsFromFile(const string& filename) {
-    system("mode con cols=150 lines=36");
-    ifstream file(filename);
-    if (file.is_open()) {
-        string line;
-        while (getline(file, line))
-            cout << line << endl;
-        file.close();
+    system("cls");
+
+    FILE* file = fopen("instructions.txt", "r");
+    if (file) {
+        char line[256];
+        while (fgets(line, sizeof(line), file)) {
+            printf("%s", line);
+        }
+        fclose(file);
     }
     else {
-        cerr << "Не удалось открыть файл инструкции: " << filename << endl;
-        cerr << "Пожалуйста, поместите файл " << Constants::INSTRUCTIONS_FILE << " в папку: " << folder_way << "\n";
+        printf("Не удалось открыть файл с инструкцией. Убедитесь, что файл 'instructions.txt' находится в той же папке, что и программа.\n");
+        char current_path[256];
+        if (_getcwd(current_path, sizeof(current_path)) != NULL) {
+            printf("Текущая папка: %s\n", current_path);
+        }
+        else
+        {
+            printf("Не удалось определить текущую папку.\n");
+        }
     }
-    cout << "\nНажмите любую клавишу для возврата в главное меню...\n";
+    printf("\nНажмите любую клавишу для продолжения...\n");
     _getch();
-    system("mode con cols=120 lines=30");
+    system("cls");
 }
 
-
-// processOrganization (без изменений)
+// processOrganization
 void processOrganization(const string& orgName, const string& corrFilename, const string& addrFilename, bool selectiveOutput, ofstream* outfile, set<string>& printedOrganizations, vector<string>& outputBuffer) {
     ifstream corrFile;
     ifstream addrFile;
@@ -418,7 +417,7 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
     }
 }
 
-// getFilenamesFromUser (адаптирован для передачи нужной функции проверки)
+// getFilenamesFromUser
 pair<string, string> getFilenamesFromUser(const char* folderPath) {
     char correspondenceFilenameBase[256];
     char addressesFilenameBase[256];
@@ -428,10 +427,7 @@ pair<string, string> getFilenamesFromUser(const char* folderPath) {
     while (true) {
         // Используем isValidFileNameChar для имени файла
         getLineWithRestrictedChars("Введите имя файла с исходящей корреспонденцией (без префикса IC_ и расширения .txt) или нажмите Esc для отмены: ",
-            correspondenceFilenameBase, sizeof(correspondenceFilenameBase), isValidFileNameChar); // <--- Передача функции
-        if (correspondenceFilenameBase[0] == '\0') {
-            return { "", "" };
-        }
+            correspondenceFilenameBase, sizeof(correspondenceFilenameBase), isValidFileNameChar); //   Передача функции
         if (strlen(correspondenceFilenameBase) == 0) {
             printf("Имя файла не может быть пустым.\n");
             continue;
@@ -450,10 +446,7 @@ pair<string, string> getFilenamesFromUser(const char* folderPath) {
     while (true) {
         // Используем isValidFileNameChar для имени файла
         getLineWithRestrictedChars("Введите имя файла с адресами организаций (без префикса AO_ и расширения .txt) или нажмите Esc для отмены: ",
-            addressesFilenameBase, sizeof(addressesFilenameBase), isValidFileNameChar); // <--- Передача функции
-        if (addressesFilenameBase[0] == '\0') {
-            return { "", "" };
-        }
+            addressesFilenameBase, sizeof(addressesFilenameBase), isValidFileNameChar); //   Передача функции
         if (strlen(addressesFilenameBase) == 0) {
             printf("Имя файла не может быть пустым.\n");
             continue;
@@ -472,22 +465,18 @@ pair<string, string> getFilenamesFromUser(const char* folderPath) {
     return { string(fullCorrFilename), string(fullAddressesFilename) };
 }
 
-// runProgram (адаптирован для передачи нужной функции проверки)
+// runProgram
 void runProgram(const char* folderPath, const string& correspondenceFilename,
     const string& addressesFilename, string& outputFilename) {
 
     while (true) {
         cout << "\nВыберите режим вывода:\n";
-        cout << "1. Поиск по название организации и вывод в консоль\n";
+        cout << "1. Поиск по названию организации и вывод в консоль\n";
         cout << "2. Полный вывод в файл\n";
         cout << "Esc - вернуться в главное меню\n";
         cout << "\nВаш выбор: ";
 
         char choice = _getch();
-        if (choice != '1' && choice != '2' && choice != 27) {
-            cout << "\nНеверный выбор. Попробуйте снова." << endl;
-            continue;
-        }
         cout << endl;
 
         switch (choice) {
@@ -495,7 +484,7 @@ void runProgram(const char* folderPath, const string& correspondenceFilename,
             char orgNameBuffer[256];
             // Используем isValidOrgNameChar для названия организации
             getLineWithRestrictedChars("Введите название организации для поиска или нажмите Esc для отмены: ",
-                orgNameBuffer, sizeof(orgNameBuffer), isValidOrgNameChar); // <--- Передача функции
+                orgNameBuffer, sizeof(orgNameBuffer), isValidOrgNameChar); //   Передача функции
 
             if (orgNameBuffer[0] == '\0') {
                 break;
@@ -517,8 +506,8 @@ void runProgram(const char* folderPath, const string& correspondenceFilename,
             for (const string& line : outputBuffer) {
                 cout << line << endl;
             }
-            cout << "\nНажмите любую клавишу для продолжения..." << endl;
-            _getch();
+            //cout << "\nНажмите любую клавишу для продолжения..." << endl;
+            //_getch();
             break;
         }
         case '2': {
@@ -587,8 +576,6 @@ void runProgram(const char* folderPath, const string& correspondenceFilename,
 
                 outfile.close();
                 cout << "Информация успешно записана в файл " << filename << ".\n";
-                cout << "Нажмите любую клавишу для продолжения..." << endl; _getch();
-
             }
             catch (const exception& e)
             {
@@ -604,7 +591,7 @@ void runProgram(const char* folderPath, const string& correspondenceFilename,
     }
 }
 
-// menu (без изменений в логике вызовов)
+// menu
 void menu() {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
