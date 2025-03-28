@@ -1,7 +1,6 @@
 //Lab_prog_2.h
 #pragma once
 
-// Стандартные C++ заголовки, которые все еще нужны
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -10,8 +9,6 @@
 #include <sstream>
 #include <algorithm>
 #include <filesystem> // Для filesystem::exists и filesystem::path
-
-// Заголовки из первой программы (стиль C)
 #include <cstdio>
 #include <cstring>
 #include <conio.h>   // Для _getch, _kbhit
@@ -25,8 +22,7 @@
 #undef max
 #endif
 
-// --- Глобальные переменные и константы из первой программы ---
-extern char folder_way[256]; // Путь к папке (стиль C)
+extern char folder_way[256]; // Путь к папке (как из первой программы)
 extern const char* file_extension;
 extern const char* ocfe; // Префикс для файлов корреспонденции
 extern const char* oa;   // Префикс для файлов адресов
@@ -38,7 +34,6 @@ extern const char* oa;   // Префикс для файлов адресов
 #define MAX_PATH 260
 #endif
 
-// --- Константы и структуры из второй программы ---
 namespace Constants {
     const std::string INSTRUCTIONS_FILE = "instructions.txt"; // Имя файла с инструкциями.
 }
@@ -55,7 +50,6 @@ struct Address {
     std::string contactPerson;
 };
 
-// --- Функции из первой программы (ввод и работа с путем) ---
 
 /** @brief Функция проверки символа для имени файла */
 bool isValidFileNameChar(char c);

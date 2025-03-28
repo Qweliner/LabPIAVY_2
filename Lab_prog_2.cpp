@@ -23,9 +23,9 @@ bool isValidPathChar(char c) {
 }
 
 // Функция проверки символа для названия организации
-bool isValidOrgNameChar(char c) { // <-- РЕАЛИЗАЦИЯ НОВОЙ ФУНКЦИИ
+bool isValidOrgNameChar(char c) { //
     unsigned char uc = (unsigned char)c;
-    bool is_letter = (uc >= 'A' && uc <= 'Z') || (uc >= 'a' && uc <= 'z') || (uc >= 192); // Латиница + Кириллица (грубо)
+    bool is_letter = (uc >= 'A' && uc <= 'Z') || (uc >= 'a' && uc <= 'z') || (uc >= 192); // Латиница + Кириллица
     bool is_digit = (uc >= '0' && uc <= '9');
     bool is_space = (uc == ' ');
     // Точная логика из openFileForAppend для поля "Название организации"
@@ -41,7 +41,26 @@ void getLineWithRestrictedChars(const char* instruction, char* buffer, int buffe
 
     while (true) {
         int key = _getch();
-        if (key == 0 || key == 224) {
+        if (key == 22) {
+            if (OpenClipboard(NULL)) {
+                HANDLE hData = GetClipboardData(CF_TEXT);
+                if (hData != NULL) {
+                    char* pszText = (char*)GlobalLock(hData);
+                    if (pszText != NULL) {
+                        // Используем переданную функцию isValidCharFunc для проверки вставляемых символов
+                        for (int j = 0; pszText[j] != '\0' && i < buffer_size - 1; ++j) {
+                            if (isValidCharFunc(pszText[j])) { //   Проверка здесь
+                                buffer[i++] = pszText[j];
+                                printf("%c", pszText[j]);
+                            }
+                        }
+                        GlobalUnlock(hData);
+                    }
+                }
+                CloseClipboard();
+            }
+        }
+        else if (key == 0 || key == 224) {
             if (_kbhit()) {
                 _getch();
                 continue;
@@ -62,25 +81,6 @@ void getLineWithRestrictedChars(const char* instruction, char* buffer, int buffe
                 i--;
                 printf("\b \b");
                 buffer[i] = '\0';
-            }
-        }
-        else if (key == 22) {
-            if (OpenClipboard(NULL)) {
-                HANDLE hData = GetClipboardData(CF_TEXT);
-                if (hData != NULL) {
-                    char* pszText = (char*)GlobalLock(hData);
-                    if (pszText != NULL) {
-                        // Используем переданную функцию isValidCharFunc для проверки вставляемых символов
-                        for (int j = 0; pszText[j] != '\0' && i < buffer_size - 1; ++j) {
-                            if (isValidCharFunc(pszText[j])) { //   Проверка здесь
-                                buffer[i++] = pszText[j];
-                                printf("%c", pszText[j]);
-                            }
-                        }
-                        GlobalUnlock(hData);
-                    }
-                }
-                CloseClipboard();
             }
         }
         else {
@@ -373,9 +373,6 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
         }
     }
     else { // Режим полного вывода (в файл)
-        // Логика полного вывода остается без изменений, она уже должна корректно
-        // обрабатывать собранные данные (включая ошибки и найденную информацию).
-        // Единственное - добавим проверку на пустые поля при выводе, чтобы соответствовать поиску.
         if (printedOrganizations.count(orgName)) {
             return;
         }
@@ -421,45 +418,49 @@ void processOrganization(const string& orgName, const string& corrFilename, cons
 pair<string, string> getFilenamesFromUser(const char* folderPath) {
     char correspondenceFilenameBase[256];
     char addressesFilenameBase[256];
-    char fullCorrFilename[512];
-    char fullAddressesFilename[512];
+    char fullCorrFilename[256];
+    char fullAddressesFilename[256];
+
+    cout << "Для отмены ввода оставьте поле пустым или нажмите Esc.\n\n";
 
     while (true) {
         // Используем isValidFileNameChar для имени файла
-        getLineWithRestrictedChars("Введите имя файла с исходящей корреспонденцией (без префикса IC_ и расширения .txt) или нажмите Esc для отмены: ",
+        getLineWithRestrictedChars("Введите имя файла с исходящей корреспонденцией (без префикса IC_ и расширения .txt): ",
             correspondenceFilenameBase, sizeof(correspondenceFilenameBase), isValidFileNameChar); //   Передача функции
         if (strlen(correspondenceFilenameBase) == 0) {
-            printf("Имя файла не может быть пустым.\n");
-            continue;
+            return { string(""), string("") };
         }
 
-        snprintf(fullCorrFilename, sizeof(fullCorrFilename), "%s%s%s%s", folderPath, ocfe, correspondenceFilenameBase, file_extension);
+        else {
+            snprintf(fullCorrFilename, sizeof(fullCorrFilename), "%s%s%s%s", folderPath, ocfe, correspondenceFilenameBase, file_extension);
 
-        if (!filesystem::exists(fullCorrFilename)) {
-            cerr << "Ошибка: Файл " << fullCorrFilename << " не существует.\n";
-            cout << "Пожалуйста, попробуйте еще раз.\n";
-            continue;
+            if (!filesystem::exists(fullCorrFilename)) {
+                cerr << "Ошибка: Файл " << fullCorrFilename << " не существует.\n";
+                cout << "Пожалуйста, попробуйте еще раз.\n";
+                continue;
+            }
+            break;
         }
-        break;
     }
 
     while (true) {
         // Используем isValidFileNameChar для имени файла
-        getLineWithRestrictedChars("Введите имя файла с адресами организаций (без префикса AO_ и расширения .txt) или нажмите Esc для отмены: ",
+        getLineWithRestrictedChars("Введите имя файла с адресами организаций (без префикса AO_ и расширения .txt): ",
             addressesFilenameBase, sizeof(addressesFilenameBase), isValidFileNameChar); //   Передача функции
         if (strlen(addressesFilenameBase) == 0) {
-            printf("Имя файла не может быть пустым.\n");
-            continue;
+            return { string(""), string("") };
         }
 
-        snprintf(fullAddressesFilename, sizeof(fullAddressesFilename), "%s%s%s%s", folderPath, oa, addressesFilenameBase, file_extension);
+        else {
+            snprintf(fullAddressesFilename, sizeof(fullAddressesFilename), "%s%s%s%s", folderPath, oa, addressesFilenameBase, file_extension);
 
-        if (!filesystem::exists(fullAddressesFilename)) {
-            cerr << "Ошибка: Файл " << fullAddressesFilename << " не существует.\n";
-            cout << "Пожалуйста, попробуйте еще раз.\n";
-            continue;
+            if (!filesystem::exists(fullAddressesFilename)) {
+                cerr << "Ошибка: Файл " << fullAddressesFilename << " не существует.\n";
+                cout << "Пожалуйста, попробуйте еще раз.\n";
+                continue;
+            }
+            break;
         }
-        break;
     }
 
     return { string(fullCorrFilename), string(fullAddressesFilename) };
@@ -474,7 +475,6 @@ void runProgram(const char* folderPath, const string& correspondenceFilename,
         cout << "1. Поиск по названию организации и вывод в консоль\n";
         cout << "2. Полный вывод в файл\n";
         cout << "Esc - вернуться в главное меню\n";
-        cout << "\nВаш выбор: ";
 
         char choice = _getch();
         cout << endl;
