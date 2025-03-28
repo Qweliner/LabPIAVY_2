@@ -1,8 +1,5 @@
 ﻿// Lab_prog.cpp
 #include "Lab_prog_2.h"
-#include <iostream>
-#include <windows.h>
-#include <filesystem>
 
 using namespace std;
 
