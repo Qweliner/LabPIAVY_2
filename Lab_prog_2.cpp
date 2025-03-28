@@ -435,7 +435,7 @@ void runProgram(const char* folderPath, const string& correspondenceFilename, co
     while (true) { // Цикл подменю
         cout << "\nВыберите режим работы:\n"
             << "1. Поиск по данным и вывод в консоль\n"
-            << "2. Полный вывод в файл (по всем организациям из обоих файлов)\n"
+            << "2. Полный вывод в файл\n"
             << "Esc - вернуться в главное меню\n";
         char choice = _getch();
         cout << endl;
